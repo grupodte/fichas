@@ -6,6 +6,7 @@ const FormularioTransaccion = () => {
     const [cuentas, setCuentas] = useState([]);
     const [tiposIngreso, setTiposIngreso] = useState([]);
     const [tiposEgreso, setTiposEgreso] = useState([]);
+    const [enviando, setEnviando] = useState(false);
 
     const [formData, setFormData] = useState({
         nombre_cliente: '',
@@ -18,6 +19,7 @@ const FormularioTransaccion = () => {
         concepto: 'FORMULARIO MANUAL',
     });
 
+    // Obtener clientes
     useEffect(() => {
         fetch('https://opensheet.elk.sh/1hxtoDqUNsVKj_R0gLV1ohb3LEf2fIjlXo2h-ghmHVU4/CLIENTES')
             .then(res => res.json())
@@ -27,6 +29,7 @@ const FormularioTransaccion = () => {
             });
     }, []);
 
+    // Obtener cuentas y tipos asociados
     useEffect(() => {
         fetch('https://opensheet.elk.sh/1hhIN8WypZXejNgLLP802dypL-d2KMcyGzDsYWpQd3tM/Sheet1')
             .then(res => res.json())
@@ -39,12 +42,20 @@ const FormularioTransaccion = () => {
             });
     }, []);
 
+    // Actualizar tipos automáticamente según cuenta seleccionada
     useEffect(() => {
-        const cuentaIngreso = cuentas.find(c => c.cuenta === formData.cuenta_ingreso);
-        setTiposIngreso(cuentaIngreso?.tipos || []);
+        const cuentaIng = cuentas.find(c => c.cuenta === formData.cuenta_ingreso);
+        const cuentaEgr = cuentas.find(c => c.cuenta === formData.cuenta_egreso);
+        setTiposIngreso(cuentaIng?.tipos || []);
+        setTiposEgreso(cuentaEgr?.tipos || []);
 
-        const cuentaEgreso = cuentas.find(c => c.cuenta === formData.cuenta_egreso);
-        setTiposEgreso(cuentaEgreso?.tipos || []);
+        // Autocompletar el tipo si solo hay uno
+        if (cuentaIng?.tipos?.length === 1) {
+            setFormData(prev => ({ ...prev, tipo_ingreso: cuentaIng.tipos[0] }));
+        }
+        if (cuentaEgr?.tipos?.length === 1) {
+            setFormData(prev => ({ ...prev, tipo_egreso: cuentaEgr.tipos[0] }));
+        }
     }, [formData.cuenta_ingreso, formData.cuenta_egreso, cuentas]);
 
     const handleChange = e => {
@@ -56,28 +67,41 @@ const FormularioTransaccion = () => {
 
     const handleSubmit = async e => {
         e.preventDefault();
-        const res = await fetch('/api/registrar-transaccion', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData),
-        });
 
-        const result = await res.json();
-        alert(result.mensaje || 'Transacción enviada');
+        // Validar campos básicos (puedes personalizar)
+        if (!formData.nombre_cliente) return alert('Seleccioná un cliente');
+        if (!formData.monto_ingreso && !formData.monto_egreso) return alert('Debe registrar al menos un monto');
+        if (enviando) return;
 
-        // ✅ Resetear formulario
-        setFormData({
-            nombre_cliente: '',
-            monto_ingreso: '',
-            cuenta_ingreso: '',
-            tipo_ingreso: '',
-            monto_egreso: '',
-            cuenta_egreso: '',
-            tipo_egreso: '',
-            concepto: 'FORMULARIO MANUAL',
-        });
+        setEnviando(true);
+
+        try {
+            const res = await fetch('/api/registrar-transaccion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            });
+
+            const result = await res.json();
+            alert(result.mensaje || 'Transacción enviada');
+
+            // Reset
+            setFormData({
+                nombre_cliente: '',
+                monto_ingreso: '',
+                cuenta_ingreso: '',
+                tipo_ingreso: '',
+                monto_egreso: '',
+                cuenta_egreso: '',
+                tipo_egreso: '',
+                concepto: 'FORMULARIO MANUAL',
+            });
+        } catch (err) {
+            alert('Error al enviar transacción');
+        } finally {
+            setTimeout(() => setEnviando(false), 3000); // cooldown de 3 segundos
+        }
     };
-      
 
     return (
         <form
@@ -88,14 +112,12 @@ const FormularioTransaccion = () => {
             <p className="text-sm text-gray-600 mb-6">Completá los campos para registrar el ingreso y egreso.</p>
 
             <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-2">
-                    <FiltroSelect
-                        label="Cliente"
-                        options={clientes}
-                        value={formData.nombre_cliente}
-                        onChange={(val) => setFormData(prev => ({ ...prev, nombre_cliente: val }))}
-                    />
-                </div>
+                <FiltroSelect
+                    label="Cliente"
+                    options={clientes}
+                    value={formData.nombre_cliente}
+                    onChange={(val) => setFormData(prev => ({ ...prev, nombre_cliente: val }))}
+                />
 
                 <input
                     name="monto_ingreso"
@@ -103,23 +125,21 @@ const FormularioTransaccion = () => {
                     placeholder="Monto ingreso"
                     value={formData.monto_ingreso}
                     onChange={handleChange}
-                    className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                    className="input-base border-green-400"
                 />
 
-                <div className="flex flex-col gap-2">
-                    <FiltroSelect
-                        label="Cuenta ingreso"
-                        options={cuentas.map(c => c.cuenta)}
-                        value={formData.cuenta_ingreso}
-                        onChange={(val) => setFormData(prev => ({ ...prev, cuenta_ingreso: val }))}
-                    />
-                </div>
+                <FiltroSelect
+                    label="Cuenta ingreso"
+                    options={cuentas.map(c => c.cuenta)}
+                    value={formData.cuenta_ingreso}
+                    onChange={(val) => setFormData(prev => ({ ...prev, cuenta_ingreso: val }))}
+                />
 
                 <select
                     name="tipo_ingreso"
                     onChange={handleChange}
                     value={formData.tipo_ingreso}
-                    className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400 transition"
+                    className="input-base"
                 >
                     <option value="">Seleccionar tipo ingreso</option>
                     {tiposIngreso.map((tipo, i) => (
@@ -133,23 +153,21 @@ const FormularioTransaccion = () => {
                     placeholder="Monto egreso"
                     value={formData.monto_egreso}
                     onChange={handleChange}
-                    className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-red-400 transition"
+                    className="input-base border-red-400"
                 />
 
-                <div className="flex flex-col gap-2">
-                    <FiltroSelect
-                        label="Cuenta egreso"
-                        options={cuentas.map(c => c.cuenta)}
-                        value={formData.cuenta_egreso}
-                        onChange={(val) => setFormData(prev => ({ ...prev, cuenta_egreso: val }))}
-                    />
-                </div>
+                <FiltroSelect
+                    label="Cuenta egreso"
+                    options={cuentas.map(c => c.cuenta)}
+                    value={formData.cuenta_egreso}
+                    onChange={(val) => setFormData(prev => ({ ...prev, cuenta_egreso: val }))}
+                />
 
                 <select
                     name="tipo_egreso"
                     onChange={handleChange}
                     value={formData.tipo_egreso}
-                    className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-red-400 transition"
+                    className="input-base"
                 >
                     <option value="">Seleccionar tipo egreso</option>
                     {tiposEgreso.map((tipo, i) => (
@@ -159,9 +177,10 @@ const FormularioTransaccion = () => {
 
                 <button
                     type="submit"
-                    className="bg-black text-white p-2 rounded w-full hover:ring-2 hover:ring-white hover:shadow-lg transition"
+                    disabled={enviando}
+                    className={`bg-black text-white p-2 rounded w-full hover:ring-2 hover:ring-white transition ${enviando ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                    Enviar transacción
+                    {enviando ? 'Enviando...' : 'Enviar transacción'}
                 </button>
             </div>
         </form>
