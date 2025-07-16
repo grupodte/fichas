@@ -45,7 +45,7 @@ const FormularioTransaccion = () => {
                     .filter(item => item["NOMBRE "]?.trim())
                     .map(item => ({
                         nombre: item["NOMBRE "].trim(),
-                        numero: item[""]?.trim() || ''
+                        numero: item["NUM"]?.trim() || ''
                     }));
                 setClientes(lista);
             });
@@ -142,21 +142,23 @@ const FormularioTransaccion = () => {
                 <div className="flex flex-col gap-6">
                     <DropdownSelect
                         label="Cliente"
-                        options={clientes.map(c => c.nombre)}
+                        options={clientes.map(c => `${c.nombre} (N° ${c.numero})`)}
+
                         value={formData.nombre_cliente}
                         onChange={(val) => {
-                            const clienteSeleccionado = clientes.find(c => c.nombre === val);
+                            const nombreExtraido = val.split(' (N°')[0]; // elimina " (N° ...)"
+                            const clienteSeleccionado = clientes.find(c => c.nombre === nombreExtraido);
                             setFormData(prev => ({
                                 ...prev,
-                                nombre_cliente: val,
+                                nombre_cliente: nombreExtraido,
                                 numero_cliente: clienteSeleccionado?.numero || ''
                             }));
-                    }}
+                        }}
+                          
                     />
 
-                    {formData.numero_cliente && (
-                        <p className="text-sm text-gray-500 -mt-4 mb-2">Número: {formData.numero_cliente}</p>
-                    )}
+
+              
 
                     <input
                         name="monto_ingreso"
