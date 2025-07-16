@@ -1,10 +1,15 @@
 // src/components/SmartSelect.jsx
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Combobox } from '@headlessui/react';
 import { ChevronUpDownIcon, CheckIcon, ArrowDownCircleIcon, ArrowDownIcon, ArrowDownTrayIcon, ArrowTurnDownRightIcon } from '@heroicons/react/20/solid';
 
 export default function SmartSelect({ label, options = [], value, onChange }) {
     const [query, setQuery] = useState('');
+
+    // ✅ Agregado: sincronizar input con el valor externo
+    useEffect(() => {
+        setQuery(value || '');
+    }, [value]);
 
     const filteredOptions = useMemo(() => {
         return query === ''
@@ -25,11 +30,11 @@ export default function SmartSelect({ label, options = [], value, onChange }) {
                         <Combobox.Input
                             className="w-full border-none text-sm text-gray-900 focus:outline-none"
                             displayValue={(opt) => opt}
+                            value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder={`Buscar ${label.toLowerCase()}...`}
                         />
-                        <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-3">
-                        </Combobox.Button>
+                        <Combobox.Button className="absolute inset-y-0 right-0 flex items-center pr-3" />
                     </div>
 
                     {filteredOptions.length > 0 && (
@@ -39,15 +44,11 @@ export default function SmartSelect({ label, options = [], value, onChange }) {
                                     key={idx}
                                     value={opt}
                                     className={({ active }) =>
-                                        `cursor-pointer select-none py-2 px-4 ${active ? 'bg-blue-100 text-blue-900' : 'text-gray-900'
-                                        }`
+                                        `cursor-pointer select-none py-2 px-4 ${active ? 'bg-blue-100 text-blue-900' : 'text-gray-900'}`
                                     }
                                 >
                                     {({ selected }) => (
-                                        <span
-                                            className={`flex justify-between ${selected ? 'font-semibold' : ''
-                                                }`}
-                                        >
+                                        <span className={`flex justify-between ${selected ? 'font-semibold' : ''}`}>
                                             {opt}
                                             {selected && (
                                                 <CheckIcon className="h-5 w-5 text-blue-600" />
