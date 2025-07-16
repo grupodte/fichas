@@ -130,7 +130,7 @@ const FormularioTransaccion = () => {
     };
 
     return (
-        <div className="h-screen overflow-y-auto flex items-center justify-center px-4 pb-20 pt-8">
+        <div className="overflow-y-auto flex items-center justify-center px-4 pb-20 pt-8">
             <form
                 onSubmit={handleSubmit}
                 className="max-w-lg mx-auto bg-white/50 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-white/30"
