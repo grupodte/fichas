@@ -1,10 +1,13 @@
 // src/App.jsx
 import FormularioTransaccion from './FormularioTransaccion';
 
+
 function App() {
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
-      <FormularioTransaccion />
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+     
+    
+<FormularioTransaccion />
     </div>
   );
 }
