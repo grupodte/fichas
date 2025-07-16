@@ -25,6 +25,19 @@ const FormularioTransaccion = () => {
     });
 
     useEffect(() => {
+        const handleFocus = (e) => {
+            e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        const inputs = document.querySelectorAll('input, select');
+        inputs.forEach(input => input.addEventListener('focus', handleFocus));
+
+        return () => {
+            inputs.forEach(input => input.removeEventListener('focus', handleFocus));
+        };
+    }, []);
+
+    useEffect(() => {
         fetch('https://opensheet.elk.sh/1hxtoDqUNsVKj_R0gLV1ohb3LEf2fIjlXo2h-ghmHVU4/CLIENTES')
             .then(res => res.json())
             .then(data => {
@@ -110,7 +123,7 @@ const FormularioTransaccion = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 pb-40 pt-8">
+        <div className="h-screen overflow-y-auto flex items-center justify-center px-4 pb-20 pt-8">
             <form
                 onSubmit={handleSubmit}
                 className="max-w-lg mx-auto bg-white/50 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-white/30"
