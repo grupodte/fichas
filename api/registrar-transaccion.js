@@ -40,7 +40,6 @@ export default async function handler(req, res) {
                 cuenta_egreso || '',
                 tipo_egreso || '',
                 resultado,
-                concepto || ''
             ]
         ];
 

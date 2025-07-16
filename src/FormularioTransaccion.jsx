@@ -22,7 +22,6 @@ const FormularioTransaccion = () => {
         monto_egreso: '',
         cuenta_egreso: '',
         tipo_egreso: '',
-        concepto: 'FORMULARIO MANUAL',
     });
 
     useEffect(() => {
