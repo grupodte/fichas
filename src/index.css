@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+
+/* Importar la fuente */
+@font-face {
+  font-family: 'Minecraft';
+  src: url('/src/assets/CreatoDisplay-Regular.otf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@layer base {
+  body {
+    @apply font-minecraft;
+  }
+}
+
 @layer components {
   .input-base {
     @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 placeholder-gray-400 transition;
@@ -11,7 +26,6 @@
     @apply rounded-lg px-4 py-2 text-sm font-medium bg-black text-white hover:bg-neutral-800 transition;
   }
 }
-/* index.css */
 
 html,
 body,
@@ -22,9 +36,8 @@ body,
 }
 
 body {
-  font-family: sans-serif;
-  background-color: #f9fafb; /* gris claro (opcional, si no está cubierto por DarkVeil) */
-  overflow: hidden; /* evita scroll no deseado si DarkVeil anima */
+  background-color: #f9fafb;
+  overflow: hidden;
 }
 
 * {
