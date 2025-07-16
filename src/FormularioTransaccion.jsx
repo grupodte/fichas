@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import FiltroSelect from './FiltroSelect';
+import DropdownSelect from './components/DropdownSelect';
 import { toast } from 'react-hot-toast';
 
 const FormularioTransaccion = () => {
@@ -65,10 +66,6 @@ const FormularioTransaccion = () => {
         }));
     };
 
-    const scrollIntoViewOnFocus = (ref) => {
-        ref?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    };
-
     const handleSubmit = async e => {
         e.preventDefault();
 
@@ -113,8 +110,8 @@ const FormularioTransaccion = () => {
     };
 
     return (
-        <div className="min-h-[100dvh] bg-white px-4 pb-40 pt-8">
-<form
+        <div className="min-h-screen flex items-center justify-center px-4 pb-40 pt-8">
+            <form
                 onSubmit={handleSubmit}
                 className="max-w-lg mx-auto bg-white/50 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-white/30"
             >
@@ -145,19 +142,12 @@ const FormularioTransaccion = () => {
                         onChange={(val) => setFormData(prev => ({ ...prev, cuenta_ingreso: val }))}
                     />
 
-                    <select
-                        name="tipo_ingreso"
-                        ref={tipoIngresoRef}
-                        onFocus={() => scrollIntoViewOnFocus(tipoIngresoRef)}
-                        onChange={handleChange}
+                    <DropdownSelect
+                        label="Tipo ingreso"
+                        options={tiposIngreso}
                         value={formData.tipo_ingreso}
-                        className="input-base text-lg"
-                    >
-                        <option value="">Seleccionar tipo ingreso</option>
-                        {tiposIngreso.map((tipo, i) => (
-                            <option key={i} value={tipo}>{tipo}</option>
-                        ))}
-                    </select>
+                        onChange={(val) => setFormData(prev => ({ ...prev, tipo_ingreso: val }))}
+                    />
 
                     <input
                         name="monto_egreso"
@@ -175,32 +165,25 @@ const FormularioTransaccion = () => {
                         onChange={(val) => setFormData(prev => ({ ...prev, cuenta_egreso: val }))}
                     />
 
-                    <select
-                        name="tipo_egreso"
-                        ref={tipoEgresoRef}
-                        onFocus={() => scrollIntoViewOnFocus(tipoEgresoRef)}
-                        onChange={handleChange}
+                    <DropdownSelect
+                        label="Tipo egreso"
+                        options={tiposEgreso}
                         value={formData.tipo_egreso}
-                        className="input-base text-lg"
-                    >
-                        <option value="">Seleccionar tipo egreso</option>
-                        {tiposEgreso.map((tipo, i) => (
-                            <option key={i} value={tipo}>{tipo}</option>
-                        ))}
-                    </select>
+                        onChange={(val) => setFormData(prev => ({ ...prev, tipo_egreso: val }))}
+                    />
                 </div>
-                <button
-                    type="submit"
-                    onClick={handleSubmit}
-                    disabled={enviando}
-                    className={`w-full bg-black text-white text-lg py-3 rounded-xl shadow-xl transition ${enviando ? 'opacity-50 cursor-not-allowed' : 'hover:ring-2 hover:ring-white'
-                        }`}
-                >
-                    {enviando ? 'Enviando...' : 'Enviar transacción'}
-                </button>
-            </form>
 
-          
+                <div className="mt-10">
+                    <button
+                        type="submit"
+                        disabled={enviando}
+                        className={`w-full bg-black text-white text-lg py-3 rounded-xl shadow-xl transition ${enviando ? 'opacity-50 cursor-not-allowed' : 'hover:ring-2 hover:ring-white'
+                            }`}
+                    >
+                        {enviando ? 'Enviando...' : 'Enviar transacción'}
+                    </button>
+                </div>
+            </form>
         </div>
     );
 };
