@@ -15,6 +15,7 @@ const FormularioTransaccion = () => {
 
     const [formData, setFormData] = useState({
         nombre_cliente: '',
+        numero_cliente: '',
         monto_ingreso: '',
         cuenta_ingreso: '',
         tipo_ingreso: '',
@@ -41,8 +42,13 @@ const FormularioTransaccion = () => {
         fetch('https://opensheet.elk.sh/1hxtoDqUNsVKj_R0gLV1ohb3LEf2fIjlXo2h-ghmHVU4/CLIENTES')
             .then(res => res.json())
             .then(data => {
-                const nombres = data.map(item => item["NOMBRE "]?.trim()).filter(Boolean);
-                setClientes(nombres);
+                const lista = data
+                    .filter(item => item["NOMBRE "] && item["NUMERO"])
+                    .map(item => ({
+                        nombre: item["NOMBRE "].trim(),
+                        numero: item["NUMERO"].trim()
+                    }));
+                setClientes(lista);
             });
     }, []);
 
@@ -107,6 +113,7 @@ const FormularioTransaccion = () => {
 
             setFormData({
                 nombre_cliente: '',
+                numero_cliente: '',
                 monto_ingreso: '',
                 cuenta_ingreso: '',
                 tipo_ingreso: '',
@@ -134,10 +141,21 @@ const FormularioTransaccion = () => {
                 <div className="flex flex-col gap-6">
                     <FiltroSelect
                         label="Cliente"
-                        options={clientes}
+                        options={clientes.map(c => c.nombre)}
                         value={formData.nombre_cliente}
-                        onChange={(val) => setFormData(prev => ({ ...prev, nombre_cliente: val }))}
+                        onChange={(val) => {
+                            const clienteSeleccionado = clientes.find(c => c.nombre === val);
+                            setFormData(prev => ({
+                                ...prev,
+                                nombre_cliente: val,
+                                numero_cliente: clienteSeleccionado?.numero || ''
+                            }));
+                        }}
                     />
+
+                    {formData.numero_cliente && (
+                        <p className="text-sm text-gray-500 -mt-4 mb-2">Número: {formData.numero_cliente}</p>
+                    )}
 
                     <input
                         name="monto_ingreso"
