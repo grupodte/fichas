@@ -42,7 +42,7 @@ export default async function handler(req, res) {
 
         const response = await sheets.spreadsheets.values.append({
             spreadsheetId,
-            range: 'REGISTRO!B2',
+            range: 'TRANSACCIONES!B2',
             valueInputOption: 'USER_ENTERED',
             requestBody: {
                 values
