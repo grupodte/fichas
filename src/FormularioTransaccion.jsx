@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import FiltroSelect from './FiltroSelect'; // Asegurate que esté bien importado
+import FiltroSelect from './FiltroSelect'; // Ajustá el path si es necesario
 
 const FormularioTransaccion = () => {
     const [clientes, setClientes] = useState([]);
@@ -28,13 +28,13 @@ const FormularioTransaccion = () => {
             });
     }, []);
 
-    // Cargar cuentas y sus tipos asociados
+    // Cargar cuentas y tipos
     useEffect(() => {
         fetch('https://opensheet.elk.sh/1hhIN8WypZXejNgLLP802dypL-d2KMcyGzDsYWpQd3tM/Sheet1')
             .then(res => res.json())
             .then(data => {
                 const cuentasConTipos = data.map(row => {
-                    const tipos = Object.values(row).slice(1).filter(Boolean); // columnas B, C, D...
+                    const tipos = Object.values(row).slice(1).filter(Boolean);
                     return { cuenta: row["CUENTA"], tipos };
                 });
                 setCuentas(cuentasConTipos);
@@ -59,13 +59,19 @@ const FormularioTransaccion = () => {
 
     const handleSubmit = async e => {
         e.preventDefault();
-        const res = await fetch('https://4178392cd366.ngrok-free.app/webhook/registrar-transaccion', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData),
-        });
-        const result = await res.json();
-        alert(result.mensaje || 'Transacción enviada');
+        try {
+            const res = await fetch('/api/registrar-transaccion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
+            });
+
+            const result = await res.json();
+            alert(result.mensaje || 'Transacción enviada');
+        } catch (err) {
+            console.error(err);
+            alert('Error al enviar la transacción');
+        }
     };
 
     return (
