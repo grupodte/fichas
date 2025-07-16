@@ -113,8 +113,8 @@ const FormularioTransaccion = () => {
     };
 
     return (
-        <div className="min-h-screen bg-white px-4 pb-32 pt-8 overflow-y-auto">
-            <form
+        <div className="min-h-[100dvh] bg-white px-4 pb-40 pt-8">
+<form
                 onSubmit={handleSubmit}
                 className="max-w-lg mx-auto bg-white/50 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-white/30"
             >
@@ -189,9 +189,6 @@ const FormularioTransaccion = () => {
                         ))}
                     </select>
                 </div>
-            </form>
-
-            <div className="fixed bottom-4 left-4 right-4 z-50">
                 <button
                     type="submit"
                     onClick={handleSubmit}
@@ -201,7 +198,9 @@ const FormularioTransaccion = () => {
                 >
                     {enviando ? 'Enviando...' : 'Enviar transacción'}
                 </button>
-            </div>
+            </form>
+
+          
         </div>
     );
 };
