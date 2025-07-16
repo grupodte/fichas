@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import FiltroSelect from './FiltroSelect';
+import { toast } from 'react-hot-toast';
 
 const FormularioTransaccion = () => {
     const [clientes, setClientes] = useState([]);
@@ -22,7 +23,6 @@ const FormularioTransaccion = () => {
         concepto: 'FORMULARIO MANUAL',
     });
 
-    // Cargar clientes
     useEffect(() => {
         fetch('https://opensheet.elk.sh/1hxtoDqUNsVKj_R0gLV1ohb3LEf2fIjlXo2h-ghmHVU4/CLIENTES')
             .then(res => res.json())
@@ -32,7 +32,6 @@ const FormularioTransaccion = () => {
             });
     }, []);
 
-    // Cargar cuentas y tipos
     useEffect(() => {
         fetch('https://opensheet.elk.sh/1hhIN8WypZXejNgLLP802dypL-d2KMcyGzDsYWpQd3tM/Sheet1')
             .then(res => res.json())
@@ -45,7 +44,6 @@ const FormularioTransaccion = () => {
             });
     }, []);
 
-    // Actualizar tipos según cuenta seleccionada
     useEffect(() => {
         const cuentaIng = cuentas.find(c => c.cuenta === formData.cuenta_ingreso);
         const cuentaEgr = cuentas.find(c => c.cuenta === formData.cuenta_egreso);
@@ -73,8 +71,17 @@ const FormularioTransaccion = () => {
 
     const handleSubmit = async e => {
         e.preventDefault();
-        if (!formData.nombre_cliente) return alert('Seleccioná un cliente');
-        if (!formData.monto_ingreso && !formData.monto_egreso) return alert('Ingresá al menos un monto');
+
+        if (!formData.nombre_cliente) {
+            toast.error('Seleccioná un cliente');
+            return;
+        }
+
+        if (!formData.monto_ingreso && !formData.monto_egreso) {
+            toast.error('Ingresá al menos un monto');
+            return;
+        }
+
         if (enviando) return;
 
         setEnviando(true);
@@ -86,7 +93,7 @@ const FormularioTransaccion = () => {
             });
 
             const result = await res.json();
-            alert(result.mensaje || 'Transacción enviada');
+            toast.success(result.mensaje || 'Transacción enviada');
 
             setFormData({
                 nombre_cliente: '',
@@ -99,9 +106,9 @@ const FormularioTransaccion = () => {
                 concepto: 'FORMULARIO MANUAL',
             });
         } catch (err) {
-            alert('Error al enviar transacción');
+            toast.error('Error al enviar transacción');
         } finally {
-            setTimeout(() => setEnviando(false), 3000); // enfriamiento
+            setTimeout(() => setEnviando(false), 3000);
         }
     };
 
@@ -184,7 +191,6 @@ const FormularioTransaccion = () => {
                 </div>
             </form>
 
-            {/* Botón fijo inferior en móviles */}
             <div className="fixed bottom-4 left-4 right-4 z-50">
                 <button
                     type="submit"
