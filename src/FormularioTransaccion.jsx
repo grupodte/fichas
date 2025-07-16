@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import FiltroSelect from './FiltroSelect';
 
 const FormularioTransaccion = () => {
@@ -7,6 +7,9 @@ const FormularioTransaccion = () => {
     const [tiposIngreso, setTiposIngreso] = useState([]);
     const [tiposEgreso, setTiposEgreso] = useState([]);
     const [enviando, setEnviando] = useState(false);
+
+    const tipoIngresoRef = useRef(null);
+    const tipoEgresoRef = useRef(null);
 
     const [formData, setFormData] = useState({
         nombre_cliente: '',
@@ -19,7 +22,7 @@ const FormularioTransaccion = () => {
         concepto: 'FORMULARIO MANUAL',
     });
 
-    // Obtener clientes
+    // Cargar clientes
     useEffect(() => {
         fetch('https://opensheet.elk.sh/1hxtoDqUNsVKj_R0gLV1ohb3LEf2fIjlXo2h-ghmHVU4/CLIENTES')
             .then(res => res.json())
@@ -29,7 +32,7 @@ const FormularioTransaccion = () => {
             });
     }, []);
 
-    // Obtener cuentas y tipos asociados
+    // Cargar cuentas y tipos
     useEffect(() => {
         fetch('https://opensheet.elk.sh/1hhIN8WypZXejNgLLP802dypL-d2KMcyGzDsYWpQd3tM/Sheet1')
             .then(res => res.json())
@@ -42,14 +45,13 @@ const FormularioTransaccion = () => {
             });
     }, []);
 
-    // Actualizar tipos automáticamente según cuenta seleccionada
+    // Actualizar tipos según cuenta seleccionada
     useEffect(() => {
         const cuentaIng = cuentas.find(c => c.cuenta === formData.cuenta_ingreso);
         const cuentaEgr = cuentas.find(c => c.cuenta === formData.cuenta_egreso);
         setTiposIngreso(cuentaIng?.tipos || []);
         setTiposEgreso(cuentaEgr?.tipos || []);
 
-        // Autocompletar el tipo si solo hay uno
         if (cuentaIng?.tipos?.length === 1) {
             setFormData(prev => ({ ...prev, tipo_ingreso: cuentaIng.tipos[0] }));
         }
@@ -65,16 +67,17 @@ const FormularioTransaccion = () => {
         }));
     };
 
+    const scrollIntoViewOnFocus = (ref) => {
+        ref?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
+
     const handleSubmit = async e => {
         e.preventDefault();
-
-        // Validar campos básicos (puedes personalizar)
         if (!formData.nombre_cliente) return alert('Seleccioná un cliente');
-        if (!formData.monto_ingreso && !formData.monto_egreso) return alert('Debe registrar al menos un monto');
+        if (!formData.monto_ingreso && !formData.monto_egreso) return alert('Ingresá al menos un monto');
         if (enviando) return;
 
         setEnviando(true);
-
         try {
             const res = await fetch('/api/registrar-transaccion', {
                 method: 'POST',
@@ -85,7 +88,6 @@ const FormularioTransaccion = () => {
             const result = await res.json();
             alert(result.mensaje || 'Transacción enviada');
 
-            // Reset
             setFormData({
                 nombre_cliente: '',
                 monto_ingreso: '',
@@ -99,91 +101,102 @@ const FormularioTransaccion = () => {
         } catch (err) {
             alert('Error al enviar transacción');
         } finally {
-            setTimeout(() => setEnviando(false), 3000); // cooldown de 3 segundos
+            setTimeout(() => setEnviando(false), 3000); // enfriamiento
         }
     };
 
     return (
-        <form
-            onSubmit={handleSubmit}
-            className="w-full max-w-lg mx-auto backdrop-blur-md bg-white/30 shadow-xl rounded-2xl p-8 border border-white/20"
-        >
-            <h2 className="text-2xl font-bold text-gray-800 mb-1">Registrar Transacción</h2>
-            <p className="text-sm text-gray-600 mb-6">Completá los campos para registrar el ingreso y egreso.</p>
+        <div className="min-h-screen bg-white px-4 pb-32 pt-8 overflow-y-auto">
+            <form
+                onSubmit={handleSubmit}
+                className="max-w-lg mx-auto bg-white/50 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-white/30"
+            >
+                <h2 className="text-2xl font-bold text-gray-800 mb-1">Registrar Transacción</h2>
+                <p className="text-sm text-gray-600 mb-6">Completá los campos para registrar el ingreso y egreso.</p>
 
-            <div className="flex flex-col gap-6">
-                <FiltroSelect
-                    label="Cliente"
-                    options={clientes}
-                    value={formData.nombre_cliente}
-                    onChange={(val) => setFormData(prev => ({ ...prev, nombre_cliente: val }))}
-                />
+                <div className="flex flex-col gap-6">
+                    <FiltroSelect
+                        label="Cliente"
+                        options={clientes}
+                        value={formData.nombre_cliente}
+                        onChange={(val) => setFormData(prev => ({ ...prev, nombre_cliente: val }))}
+                    />
 
-                <input
-                    name="monto_ingreso"
-                    type="number"
-                    placeholder="Monto ingreso"
-                    value={formData.monto_ingreso}
-                    onChange={handleChange}
-                    className="input-base border-green-400"
-                />
+                    <input
+                        name="monto_ingreso"
+                        type="number"
+                        placeholder="Monto ingreso"
+                        value={formData.monto_ingreso}
+                        onChange={handleChange}
+                        className="input-base text-lg border-green-400"
+                    />
 
-                <FiltroSelect
-                    label="Cuenta ingreso"
-                    options={cuentas.map(c => c.cuenta)}
-                    value={formData.cuenta_ingreso}
-                    onChange={(val) => setFormData(prev => ({ ...prev, cuenta_ingreso: val }))}
-                />
+                    <FiltroSelect
+                        label="Cuenta ingreso"
+                        options={cuentas.map(c => c.cuenta)}
+                        value={formData.cuenta_ingreso}
+                        onChange={(val) => setFormData(prev => ({ ...prev, cuenta_ingreso: val }))}
+                    />
 
-                <select
-                    name="tipo_ingreso"
-                    onChange={handleChange}
-                    value={formData.tipo_ingreso}
-                    className="input-base"
-                >
-                    <option value="">Seleccionar tipo ingreso</option>
-                    {tiposIngreso.map((tipo, i) => (
-                        <option key={i} value={tipo}>{tipo}</option>
-                    ))}
-                </select>
+                    <select
+                        name="tipo_ingreso"
+                        ref={tipoIngresoRef}
+                        onFocus={() => scrollIntoViewOnFocus(tipoIngresoRef)}
+                        onChange={handleChange}
+                        value={formData.tipo_ingreso}
+                        className="input-base text-lg"
+                    >
+                        <option value="">Seleccionar tipo ingreso</option>
+                        {tiposIngreso.map((tipo, i) => (
+                            <option key={i} value={tipo}>{tipo}</option>
+                        ))}
+                    </select>
 
-                <input
-                    name="monto_egreso"
-                    type="number"
-                    placeholder="Monto egreso"
-                    value={formData.monto_egreso}
-                    onChange={handleChange}
-                    className="input-base border-red-400"
-                />
+                    <input
+                        name="monto_egreso"
+                        type="number"
+                        placeholder="Monto egreso"
+                        value={formData.monto_egreso}
+                        onChange={handleChange}
+                        className="input-base text-lg border-red-400"
+                    />
 
-                <FiltroSelect
-                    label="Cuenta egreso"
-                    options={cuentas.map(c => c.cuenta)}
-                    value={formData.cuenta_egreso}
-                    onChange={(val) => setFormData(prev => ({ ...prev, cuenta_egreso: val }))}
-                />
+                    <FiltroSelect
+                        label="Cuenta egreso"
+                        options={cuentas.map(c => c.cuenta)}
+                        value={formData.cuenta_egreso}
+                        onChange={(val) => setFormData(prev => ({ ...prev, cuenta_egreso: val }))}
+                    />
 
-                <select
-                    name="tipo_egreso"
-                    onChange={handleChange}
-                    value={formData.tipo_egreso}
-                    className="input-base"
-                >
-                    <option value="">Seleccionar tipo egreso</option>
-                    {tiposEgreso.map((tipo, i) => (
-                        <option key={i} value={tipo}>{tipo}</option>
-                    ))}
-                </select>
+                    <select
+                        name="tipo_egreso"
+                        ref={tipoEgresoRef}
+                        onFocus={() => scrollIntoViewOnFocus(tipoEgresoRef)}
+                        onChange={handleChange}
+                        value={formData.tipo_egreso}
+                        className="input-base text-lg"
+                    >
+                        <option value="">Seleccionar tipo egreso</option>
+                        {tiposEgreso.map((tipo, i) => (
+                            <option key={i} value={tipo}>{tipo}</option>
+                        ))}
+                    </select>
+                </div>
+            </form>
 
+            {/* Botón fijo inferior en móviles */}
+            <div className="fixed bottom-4 left-4 right-4 z-50">
                 <button
                     type="submit"
+                    onClick={handleSubmit}
                     disabled={enviando}
-                    className={`bg-black text-white p-2 rounded w-full hover:ring-2 hover:ring-white transition ${enviando ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    className={`w-full bg-black text-white text-lg py-3 rounded-xl shadow-xl transition ${enviando ? 'opacity-50 cursor-not-allowed' : 'hover:ring-2 hover:ring-white'
+                        }`}
                 >
                     {enviando ? 'Enviando...' : 'Enviar transacción'}
                 </button>
             </div>
-        </form>
+        </div>
     );
 };
 
