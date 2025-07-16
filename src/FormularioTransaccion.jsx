@@ -37,20 +37,21 @@ const FormularioTransaccion = () => {
             inputs.forEach(input => input.removeEventListener('focus', handleFocus));
         };
     }, []);
-
     useEffect(() => {
         fetch('https://opensheet.elk.sh/1hxtoDqUNsVKj_R0gLV1ohb3LEf2fIjlXo2h-ghmHVU4/CLIENTES')
             .then(res => res.json())
             .then(data => {
                 const lista = data
-                    .filter(item => item["NOMBRE "] && item["NUMERO"])
+                    .filter(item => item["NOMBRE "]?.trim())
                     .map(item => ({
                         nombre: item["NOMBRE "].trim(),
-                        numero: item["NUMERO"].trim()
+                        numero: item[""]?.trim() || ''  // columna A vacía
                     }));
                 setClientes(lista);
             });
     }, []);
+    
+    
 
     useEffect(() => {
         fetch('https://opensheet.elk.sh/1hhIN8WypZXejNgLLP802dypL-d2KMcyGzDsYWpQd3tM/Sheet1')
