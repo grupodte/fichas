@@ -26,6 +26,7 @@ export default async function handler(req, res) {
         } = req.body;
 
         const fecha = new Date().toLocaleDateString('es-UY');
+        const resultado = (parseFloat(monto_ingreso || 0) - parseFloat(monto_egreso || 0)).toFixed(2);
 
         const values = [
             [
