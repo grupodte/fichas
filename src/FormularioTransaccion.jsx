@@ -45,7 +45,7 @@ const FormularioTransaccion = () => {
                     .filter(item => item["NOMBRE "]?.trim())
                     .map(item => ({
                         nombre: item["NOMBRE "].trim(),
-                        numero: item[""]?.trim() || ''  // columna A vacía
+                        numero: item[""]?.trim() || ''
                     }));
                 setClientes(lista);
             });
@@ -140,7 +140,7 @@ const FormularioTransaccion = () => {
                 <p className="text-sm text-gray-600 mb-6">Completá los campos para registrar el ingreso y egreso.</p>
 
                 <div className="flex flex-col gap-6">
-                    <FiltroSelect
+                    <DropdownSelect
                         label="Cliente"
                         options={clientes.map(c => c.nombre)}
                         value={formData.nombre_cliente}
@@ -151,7 +151,7 @@ const FormularioTransaccion = () => {
                                 nombre_cliente: val,
                                 numero_cliente: clienteSeleccionado?.numero || ''
                             }));
-                        }}
+                    }}
                     />
 
                     {formData.numero_cliente && (
@@ -164,18 +164,18 @@ const FormularioTransaccion = () => {
                         placeholder="Monto ingreso"
                         value={formData.monto_ingreso}
                         onChange={handleChange}
-                        className="input-base text-lg border-green-400"
+                        className="input-base w-full  text-sm text-gray-900 focus:outline-none border-green-400"
                     />
 
-                    <FiltroSelect
+                    <DropdownSelect
                         label="Cuenta ingreso"
                         options={cuentas.map(c => c.cuenta)}
                         value={formData.cuenta_ingreso}
                         onChange={(val) => setFormData(prev => ({ ...prev, cuenta_ingreso: val }))}
                     />
 
-                    <DropdownSelect
-                        label="Tipo ingreso"
+                    <DropdownSelect              
+                          label="Tipo ingreso"
                         options={tiposIngreso}
                         value={formData.tipo_ingreso}
                         onChange={(val) => setFormData(prev => ({ ...prev, tipo_ingreso: val }))}
@@ -187,10 +187,12 @@ const FormularioTransaccion = () => {
                         placeholder="Monto egreso"
                         value={formData.monto_egreso}
                         onChange={handleChange}
-                        className="input-base text-lg border-red-400"
-                    />
 
-                    <FiltroSelect
+                        className="input-base w-full  text-sm text-gray-900 focus:outline-none border-red-400"
+
+                                            />
+
+                    <DropdownSelect
                         label="Cuenta egreso"
                         options={cuentas.map(c => c.cuenta)}
                         value={formData.cuenta_egreso}
