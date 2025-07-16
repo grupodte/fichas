@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import FiltroSelect from './FiltroSelect'; // Asegurate que esté bien importado
 
 const FormularioTransaccion = () => {
     const [clientes, setClientes] = useState([]);
@@ -33,14 +34,14 @@ const FormularioTransaccion = () => {
             .then(res => res.json())
             .then(data => {
                 const cuentasConTipos = data.map(row => {
-                    const tipos = Object.values(row).slice(1).filter(Boolean); // B, C, D...
+                    const tipos = Object.values(row).slice(1).filter(Boolean); // columnas B, C, D...
                     return { cuenta: row["CUENTA"], tipos };
                 });
                 setCuentas(cuentasConTipos);
             });
     }, []);
 
-    // Manejo dinámico al seleccionar cuenta
+    // Actualizar tipos según cuenta seleccionada
     useEffect(() => {
         const cuentaIngreso = cuentas.find(c => c.cuenta === formData.cuenta_ingreso);
         setTiposIngreso(cuentaIngreso?.tipos || []);
@@ -71,39 +72,63 @@ const FormularioTransaccion = () => {
         <form onSubmit={handleSubmit} className="max-w-md mx-auto p-4 space-y-4 bg-gray-100 rounded">
             <h2 className="text-xl font-bold text-gray-700">Registro de Transacción</h2>
 
-            <select name="nombre_cliente" onChange={handleChange} value={formData.nombre_cliente} className="w-full p-2 border rounded" required>
-                <option value="">Seleccionar cliente</option>
-                {clientes.map((nombre, i) => (
-                    <option key={i} value={nombre}>{nombre}</option>
-                ))}
-            </select>
+            <FiltroSelect
+                label="Cliente"
+                options={clientes}
+                value={formData.nombre_cliente}
+                onChange={(val) => setFormData(prev => ({ ...prev, nombre_cliente: val }))}
+            />
 
-            <input name="monto_ingreso" type="number" placeholder="Monto ingreso" onChange={handleChange} className="w-full p-2 border rounded" />
+            <input
+                name="monto_ingreso"
+                type="number"
+                placeholder="Monto ingreso"
+                value={formData.monto_ingreso}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+            />
 
-            <select name="cuenta_ingreso" onChange={handleChange} value={formData.cuenta_ingreso} className="w-full p-2 border rounded">
-                <option value="">Seleccionar cuenta ingreso</option>
-                {cuentas.map(({ cuenta }, i) => (
-                    <option key={i} value={cuenta}>{cuenta}</option>
-                ))}
-            </select>
+            <FiltroSelect
+                label="Cuenta ingreso"
+                options={cuentas.map(c => c.cuenta)}
+                value={formData.cuenta_ingreso}
+                onChange={(val) => setFormData(prev => ({ ...prev, cuenta_ingreso: val }))}
+            />
 
-            <select name="tipo_ingreso" onChange={handleChange} value={formData.tipo_ingreso} className="w-full p-2 border rounded">
+            <select
+                name="tipo_ingreso"
+                onChange={handleChange}
+                value={formData.tipo_ingreso}
+                className="w-full p-2 border rounded"
+            >
                 <option value="">Seleccionar tipo ingreso</option>
                 {tiposIngreso.map((tipo, i) => (
                     <option key={i} value={tipo}>{tipo}</option>
                 ))}
             </select>
 
-            <input name="monto_egreso" type="number" placeholder="Monto egreso" onChange={handleChange} className="w-full p-2 border rounded" />
+            <input
+                name="monto_egreso"
+                type="number"
+                placeholder="Monto egreso"
+                value={formData.monto_egreso}
+                onChange={handleChange}
+                className="w-full p-2 border rounded"
+            />
 
-            <select name="cuenta_egreso" onChange={handleChange} value={formData.cuenta_egreso} className="w-full p-2 border rounded">
-                <option value="">Seleccionar cuenta egreso</option>
-                {cuentas.map(({ cuenta }, i) => (
-                    <option key={i} value={cuenta}>{cuenta}</option>
-                ))}
-            </select>
+            <FiltroSelect
+                label="Cuenta egreso"
+                options={cuentas.map(c => c.cuenta)}
+                value={formData.cuenta_egreso}
+                onChange={(val) => setFormData(prev => ({ ...prev, cuenta_egreso: val }))}
+            />
 
-            <select name="tipo_egreso" onChange={handleChange} value={formData.tipo_egreso} className="w-full p-2 border rounded">
+            <select
+                name="tipo_egreso"
+                onChange={handleChange}
+                value={formData.tipo_egreso}
+                className="w-full p-2 border rounded"
+            >
                 <option value="">Seleccionar tipo egreso</option>
                 {tiposEgreso.map((tipo, i) => (
                     <option key={i} value={tipo}>{tipo}</option>
