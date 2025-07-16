@@ -1,53 +1,45 @@
-// /api/registrar-transaccion.js
 import { google } from 'googleapis';
-import { NextResponse } from 'next/server';
-import fs from 'fs';
 
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
-const SHEET_ID = '1iBGzUCeZgi7U2VBeAkFf4Ju8mRZbMn42sSUs_Ic2sE8'; // REEMPLAZAR por tu sheet real
-const SHEET_NAME = 'TRANSACCIONES'; // Reemplazalo si es otro
+export default async function handler(req, res) {
+    if (req.method !== 'POST') {
+        return res.status(405).json({ mensaje: 'Método no permitido' });
+    }
 
-// Cargamos credenciales desde una variable de entorno (recomendado en producción)
-const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
-
-const auth = new google.auth.GoogleAuth({
-    credentials,
-    scopes: SCOPES,
-});
-
-export async function POST(req) {
     try {
-        const body = await req.json();
-        const authClient = await auth.getClient();
-        const sheets = google.sheets({ version: 'v4', auth: authClient });
+        const { nombre_cliente, monto_ingreso, cuenta_ingreso, tipo_ingreso, monto_egreso, cuenta_egreso, tipo_egreso, concepto } = req.body;
 
-        const now = new Date();
-        const formattedDate = now.toLocaleString('es-UY', {
-            timeZone: 'America/Montevideo',
+        const auth = new google.auth.GoogleAuth({
+            credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS),
+            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
         });
 
+        const sheets = google.sheets({ version: 'v4', auth });
+
+        const spreadsheetId = '1hxtoDqUNsVKj_R0gLV1ohb3LEf2fIjlXo2h-ghmHVU4'; // ID de la hoja
+        const range = 'FORMULARIO!B2:I'; // Rango donde escribir (ajustar según necesidad)
+
         const values = [[
-            formattedDate,
-            body.nombre_cliente,
-            body.monto_ingreso,
-            body.cuenta_ingreso,
-            body.tipo_ingreso,
-            body.monto_egreso,
-            body.cuenta_egreso,
-            body.tipo_egreso,
-            body.concepto || 'FORMULARIO MANUAL',
+            new Date().toLocaleString('es-UY', { timeZone: 'America/Montevideo' }), // Fecha y hora
+            nombre_cliente || '',
+            monto_ingreso || '',
+            cuenta_ingreso || '',
+            tipo_ingreso || '',
+            monto_egreso || '',
+            cuenta_egreso || '',
+            tipo_egreso || '',
+            concepto || 'FORMULARIO MANUAL'
         ]];
 
         await sheets.spreadsheets.values.append({
-            spreadsheetId: SHEET_ID,
-            range: `${SHEET_NAME}!A1`,
+            spreadsheetId,
+            range,
             valueInputOption: 'USER_ENTERED',
             requestBody: { values },
         });
 
-        return NextResponse.json({ mensaje: 'Transacción registrada correctamente' });
-    } catch (err) {
-        console.error('Error al registrar transacción:', err);
-        return NextResponse.json({ error: 'Error al registrar transacción' }, { status: 500 });
+        return res.status(200).json({ mensaje: 'Transacción registrada correctamente' });
+    } catch (error) {
+        console.error('Error registrando transacción:', error);
+        return res.status(500).json({ mensaje: 'Error al registrar transacción', error: error.message });
     }
 }
