@@ -10,18 +10,25 @@
 
 @layer components {
   .input-base {
-    @apply w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition text-base text-gray-800 font-sans;
+    @apply w-full p-3 border rounded-lg  ;
   }
 }
 
-@layer components {
-  .input-base {
-    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900 placeholder-gray-400 transition;
-  }
+
 
   .button-base {
     @apply rounded-lg px-4 py-2 text-sm font-medium bg-black text-white hover:bg-neutral-800 transition;
   }
+
+
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  background-size: 200% 200%;
+  animation: moveGradient 15s ease infinite;
+  min-height: 100vh;
 }
 
 html,
@@ -42,4 +49,17 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+
+/* Quitar flechas en Chrome, Safari, Edge */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Quitar flechas en Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
 }

@@ -43,8 +43,9 @@ export default async function handler(req, res) {
         const values = [
             [
                 fecha,
-                numero_cliente || '',
                 nombre_cliente || '',
+                numero_cliente || '',
+
                 monto_ingreso || '',
                 cuenta_ingreso || '',
                 tipo_ingreso || '',

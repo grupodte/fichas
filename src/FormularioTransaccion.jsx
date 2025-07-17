@@ -20,6 +20,8 @@ const FormularioTransaccion = () => {
         monto_egreso: '',
         cuenta_egreso: '',
         tipo_egreso: '',
+        concepto: '', 
+
     });
 
     
@@ -81,7 +83,7 @@ const FormularioTransaccion = () => {
                 monto_egreso: '',
                 cuenta_egreso: '',
                 tipo_egreso: '',
-                concepto: 'FORMULARIO MANUAL',
+                concepto: '',
             });
         } catch (err) {
             toast.error('Error al enviar transacción');
@@ -94,10 +96,9 @@ const FormularioTransaccion = () => {
         <div className="overflow-y-auto flex items-center justify-center px-4 pb-20 pt-8">
             <form
                 onSubmit={handleSubmit}
-                className="max-w-lg mx-auto bg-white/50 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-white/30"
+                className="max-w-lg md:min-w-[400px] mx-auto bg-white/10 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-white/30"
             >
-                <h2 className="text-2xl font-bold text-gray-800 mb-1">Registrar Transacción</h2>
-                <p className="text-sm text-gray-600 mb-6">Completá los campos para registrar el ingreso y egreso.</p>
+                <h2 className="text-2xl font-bold text-white mb-1 text-center mb-4">Registrar Transacción</h2>
 
                 <div className="flex flex-col gap-6">
                     <DropdownSelect
@@ -126,7 +127,9 @@ const FormularioTransaccion = () => {
                         placeholder="Monto ingreso"
                         value={formData.monto_ingreso}
                         onChange={handleChange}
-                        className="input-base w-full  text-sm text-gray-900 focus:outline-none border-green-400"
+                        className="input-base  py-2 pl-3 pr-10 text-sm   bg-white/10 backdrop-blur-md w-full bg-transparent text-sm text-white placeholder-white/60 focus:outline-none border-green-400"
+
+
                     />
 
                     <DropdownSelect
@@ -150,7 +153,7 @@ const FormularioTransaccion = () => {
                         value={formData.monto_egreso}
                         onChange={handleChange}
 
-                        className="input-base w-full  text-sm text-gray-900 focus:outline-none border-red-400"
+                        className="input-base  py-2 pl-3 pr-10 text-sm   bg-white/10 backdrop-blur-md w-full bg-transparent text-sm text-white placeholder-white/60 focus:outline-none border-red-400"
 
                                             />
 
@@ -173,7 +176,7 @@ const FormularioTransaccion = () => {
                     <button
                         type="submit"
                         disabled={enviando}
-                        className={`w-full bg-black text-white text-lg py-3 rounded-xl shadow-xl transition ${enviando ? 'opacity-50 cursor-not-allowed' : 'hover:ring-2 hover:ring-white'
+                        className={`w-full bg-black/30 text-white text-lg py-3 rounded-xl shadow-xl transition ${enviando ? 'opacity-50 cursor-not-allowed' : 'hover:ring-2 hover:ring-white'
                             }`}
                     >
                         {enviando ? 'Enviando...' : 'Enviar transacción'}
