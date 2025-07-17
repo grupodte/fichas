@@ -22,7 +22,12 @@ export default async function handler(req, res) {
             monto_egreso,
             cuenta_egreso,
             tipo_egreso,
-            concepto
+            concepto,
+            categoria_resultado,
+            metodo_pago,
+            control,
+            tipo_cambio,
+            otros_valores
         } = req.body;
 
         if (!nombre_cliente) {
@@ -45,7 +50,6 @@ export default async function handler(req, res) {
                 fecha,
                 nombre_cliente || '',
                 numero_cliente || '',
-
                 monto_ingreso || '',
                 cuenta_ingreso || '',
                 tipo_ingreso || '',
@@ -53,6 +57,12 @@ export default async function handler(req, res) {
                 cuenta_egreso || '',
                 tipo_egreso || '',
                 resultado,
+                categoria_resultado || '',
+                concepto || '',
+                metodo_pago || '',
+                control || '',
+                tipo_cambio || '',
+                otros_valores || ''
             ]
         ];
 

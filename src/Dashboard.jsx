@@ -4,6 +4,7 @@ import MagicBento from './components/MagicBento/MagicBento'; // Suponiendo que g
 import { useClientes } from './hooks/useClientes';
 import { useCuentas } from './hooks/useCuentas';
 import { useTransacciones } from './hooks/useTransacciones';
+import GraficoTransacciones from './components/GraficoTransacciones';
 
 const Dashboard = () => {
     const { clientes, loading: loadingClientes } = useClientes();
@@ -14,13 +15,15 @@ const Dashboard = () => {
         totalIngresos: 0,
         totalEgresos: 0,
         saldoTotal: 0,
-        topCliente: { nombre: 'N/A', monto: 0 }
+        topCliente: { nombre: 'N/A', monto: 0 },
+        totalTransacciones: 0
     });
 
     useEffect(() => {
         if (!loadingTransacciones) {
             const totalIngresos = transacciones.reduce((acc, t) => acc + (parseFloat(t.monto_ingreso) || 0), 0);
             const totalEgresos = transacciones.reduce((acc, t) => acc + (parseFloat(t.monto_egreso) || 0), 0);
+            const totalTransacciones = transacciones.length;
 
             // Aquí puedes agregar la lógica para calcular el topCliente
 
@@ -28,7 +31,8 @@ const Dashboard = () => {
                 totalIngresos,
                 totalEgresos,
                 saldoTotal: totalIngresos - totalEgresos,
-                topCliente: { nombre: 'Cliente Ejemplo', monto: 1500 } // Placeholder
+                topCliente: { nombre: 'Cliente Ejemplo', monto: 1500 }, // Placeholder
+                totalTransacciones
             });
         }
     }, [transacciones, loadingTransacciones]);
@@ -55,9 +59,22 @@ const Dashboard = () => {
             description: `Monto: $${stats.topCliente.monto}`,
             label: 'Ranking'
         },
+        {
+            title: 'Transacciones Totales',
+            value: stats.totalTransacciones,
+            label: 'General'
+        }
     ];
 
-    return <MagicBento cardData={cardData} />;
+    return (
+        <div>
+            <MagicBento cardData={cardData} />
+            <div className="p-4">
+                <h2 className="text-xl font-bold text-white mb-4">Transacciones de la última semana</h2>
+                <GraficoTransacciones transacciones={transacciones} />
+            </div>
+        </div>
+    );
 };
 
 export default Dashboard;
