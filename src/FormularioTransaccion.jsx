@@ -24,18 +24,7 @@ const FormularioTransaccion = () => {
         tipo_egreso: '',
     });
 
-    useEffect(() => {
-        const handleFocus = (e) => {
-            e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        };
-
-        const inputs = document.querySelectorAll('input, select');
-        inputs.forEach(input => input.addEventListener('focus', handleFocus));
-
-        return () => {
-            inputs.forEach(input => input.removeEventListener('focus', handleFocus));
-        };
-    }, []);
+    
     useEffect(() => {
         fetch('https://opensheet.elk.sh/1hxtoDqUNsVKj_R0gLV1ohb3LEf2fIjlXo2h-ghmHVU4/CLIENTES')
             .then(res => res.json())
