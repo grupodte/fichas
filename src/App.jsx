@@ -4,6 +4,7 @@ import Navbar from './components/NavBar/Navbar'; // Ruta corregida con minúscul
 import FormularioTransaccion from './FormularioTransaccion';
 import Dashboard from './Dashboard';
 import Login from './Login';
+import Layout from './Layout';
 
 function App() {
   return (
@@ -12,8 +13,10 @@ function App() {
       <main className="main-content">
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route element={<Layout />}>
             <Route path="/" element={<FormularioTransaccion />} />
             <Route path="/dashboard" element={<Dashboard />} />
+          </Route>
         </Routes>
       </main>
       <Toaster
