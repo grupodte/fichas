@@ -1,17 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
-import FiltroSelect from './FiltroSelect';
+import { useEffect, useState } from 'react';
 import DropdownSelect from './components/DropdownSelect';
 import { toast } from 'react-hot-toast';
+import { useClientes } from './hooks/useClientes';
+import { useCuentas } from './hooks/useCuentas';
 
 const FormularioTransaccion = () => {
-    const [clientes, setClientes] = useState([]);
-    const [cuentas, setCuentas] = useState([]);
+    const clientes = useClientes();
+    const cuentas = useCuentas();
     const [tiposIngreso, setTiposIngreso] = useState([]);
     const [tiposEgreso, setTiposEgreso] = useState([]);
     const [enviando, setEnviando] = useState(false);
-
-    const tipoIngresoRef = useRef(null);
-    const tipoEgresoRef = useRef(null);
 
     const [formData, setFormData] = useState({
         nombre_cliente: '',
@@ -25,33 +23,7 @@ const FormularioTransaccion = () => {
     });
 
     
-    useEffect(() => {
-        fetch('https://opensheet.elk.sh/1hxtoDqUNsVKj_R0gLV1ohb3LEf2fIjlXo2h-ghmHVU4/CLIENTES')
-            .then(res => res.json())
-            .then(data => {
-                const lista = data
-                    .filter(item => item["NOMBRE "]?.trim())
-                    .map(item => ({
-                        nombre: item["NOMBRE "].trim(),
-                        numero: item["NUM"]?.trim() || ''
-                    }));
-                setClientes(lista);
-            });
-    }, []);
     
-    
-
-    useEffect(() => {
-        fetch('https://opensheet.elk.sh/1hhIN8WypZXejNgLLP802dypL-d2KMcyGzDsYWpQd3tM/Sheet1')
-            .then(res => res.json())
-            .then(data => {
-                const cuentasConTipos = data.map(row => {
-                    const tipos = Object.values(row).slice(1).filter(Boolean);
-                    return { cuenta: row["CUENTA"], tipos };
-                });
-                setCuentas(cuentasConTipos);
-            });
-    }, []);
 
     useEffect(() => {
         const cuentaIng = cuentas.find(c => c.cuenta === formData.cuenta_ingreso);

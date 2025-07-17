@@ -25,6 +25,18 @@ export default async function handler(req, res) {
             concepto
         } = req.body;
 
+        if (!nombre_cliente) {
+            return res.status(400).json({ error: 'El nombre del cliente es obligatorio.' });
+        }
+
+        if (monto_ingreso && isNaN(parseFloat(monto_ingreso))) {
+            return res.status(400).json({ error: 'El monto de ingreso debe ser un número.' });
+        }
+
+        if (monto_egreso && isNaN(parseFloat(monto_egreso))) {
+            return res.status(400).json({ error: 'El monto de egreso debe ser un número.' });
+        }
+
         const fecha = new Date().toLocaleDateString('es-UY');
         const resultado = (parseFloat(monto_ingreso || 0) - parseFloat(monto_egreso || 0)).toFixed(2);
 
