@@ -1,0 +1,23 @@
+---
+import Layout from "../layouts/Layout.astro";
+
+const { cookies, redirect } = Astro;
+
+const secretKey = import.meta.env.SECRET_KEY;
+const providedKey = cookies.get("secret-key")?.value;
+
+if (providedKey === secretKey) {
+  return redirect("/");
+}
+---
+
+<Layout title="Login">
+  <main>
+    <h1>Login</h1>
+    <form action="/api/login" method="post">
+      <label for="secret-key">Secret Key:</label>
+      <input type="password" id="secret-key" name="secret-key" required />
+      <button type="submit">Login</button>
+    </form>
+  </main>
+</Layout>
