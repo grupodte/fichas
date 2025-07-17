@@ -3,6 +3,8 @@ import { Toaster } from 'react-hot-toast';
 import Navbar from './components/NavBar/Navbar'; // Ruta corregida con minúscula y relativa a src/
 import FormularioTransaccion from './FormularioTransaccion';
 import Dashboard from './Dashboard';
+import Login from './Login';
+import Layout from './Layout';
 
 function App() {
   return (
@@ -10,8 +12,11 @@ function App() {
       <Navbar />
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<FormularioTransaccion />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/login" element={<Login />} />
+          <Route element={<Layout />}>
+            <Route path="/" element={<FormularioTransaccion />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+          </Route>
         </Routes>
       </main>
       <Toaster
