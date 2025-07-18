@@ -15,6 +15,9 @@ import {
     TrendingDown,
     BarChart3
 } from 'lucide-react';
+import FiltroDeTiempo from './components/FiltroDeTiempo';
+import { useDateRange } from './context/DateRangeContext';
+import { isWithinInterval, parse } from 'date-fns';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
 
@@ -41,66 +44,93 @@ const StatCard = ({ title, value, Icon }) => (
 const Dashboard = () => {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [totals, setTotals] = useState({
-        ingresos: 0,
-        egresos: 0,
-        transacciones: 0,
-        ratio: 0,
-    });
+    const [totals, setTotals] = useState({ ingresos: 0, egresos: 0, transacciones: 0, ratio: 0 });
     const [monthly, setMonthly] = useState({});
     const [recientes, setRecientes] = useState([]);
+    const { dateRange } = useDateRange();
+
+    const parseFecha = (fecha) => {
+        const [dd, mm, yyyy] = fecha.split('/');
+        return new Date(`${yyyy}-${mm}-${dd}`);
+    };
 
     useEffect(() => {
         fetch(SHEET_URL)
             .then((res) => res.json())
             .then((data) => {
-                const ingresos = data.reduce((acc, t) => {
-                    const val = parseFloat(t['MONTO INGRESO']);
-                    return acc + (isNaN(val) ? 0 : val);
-                }, 0);
+                const filtradas = data.filter((t) => {
+                    if (!t.FECHA) return false;
+                    const fecha = parseFecha(t.FECHA);
+                    return isWithinInterval(fecha, {
+                        start: dateRange.from,
+                        end: dateRange.to,
+                    });
+                });
 
-                const egresos = data.reduce((acc, t) => {
-                    const val = parseFloat(t['MONTO EGRESO']);
-                    return acc + (isNaN(val) ? 0 : val);
-                }, 0);
-
+                const ingresos = filtradas.reduce((acc, t) => acc + (parseFloat(t['MONTO INGRESO']) || 0), 0);
+                const egresos = filtradas.reduce((acc, t) => acc + (parseFloat(t['MONTO EGRESO']) || 0), 0);
                 const ratio = egresos > 0 ? ingresos / egresos : 0;
 
-                // Agrupar por mes
                 const mensual = {};
-                data.forEach((t) => {
-                    if (!t.FECHA) return;
-                    const [dd, mm, yyyy] = t.FECHA.split('/');
-                    const mes = `${yyyy}-${mm}`;
+                filtradas.forEach((t) => {
+                    const fecha = parseFecha(t.FECHA);
+                    const mes = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
                     if (!mensual[mes]) mensual[mes] = { ingresos: 0, egresos: 0 };
-
                     const ingreso = parseFloat(t['MONTO INGRESO']);
                     const egreso = parseFloat(t['MONTO EGRESO']);
                     if (!isNaN(ingreso)) mensual[mes].ingresos += ingreso;
                     if (!isNaN(egreso)) mensual[mes].egresos += egreso;
                 });
 
-                const ultimas = data
-                    .filter((t) => t.FECHA)
-                    .slice(-5)
-                    .reverse();
+                const ultimas = filtradas.slice(-5).reverse();
 
+                setTransactions(filtradas);
                 setMonthly(mensual);
                 setRecientes(ultimas);
-                setTotals({
-                    ingresos,
-                    egresos,
-                    transacciones: data.length,
-                    ratio,
-                });
-                setTransactions(data);
+                setTotals({ ingresos, egresos, transacciones: filtradas.length, ratio });
                 setLoading(false);
             })
             .catch((err) => {
                 console.error('Error al cargar transacciones:', err);
                 setLoading(false);
             });
-    }, []);
+    }, [dateRange]);
+
+    const handleSave = async (updated) => {
+        await fetch('/api/editar-transaccion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                originalFecha: updated.FECHA,
+                originalNroCliente: updated['N° CLIENTE'],
+                updated,
+            }),
+        });
+
+        setTransactions((prev) =>
+            prev.map((t) =>
+                t.FECHA === updated.FECHA && t['N° CLIENTE'] === updated['N° CLIENTE'] ? updated : t
+            )
+        );
+    };
+
+    const handleDelete = async (toDelete) => {
+        await fetch('/api/eliminar-transaccion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fecha: toDelete.FECHA,
+                nroCliente: toDelete['N° CLIENTE'],
+            }),
+        });
+
+        setTransactions((prev) =>
+            prev.filter((t) =>
+                !(t.FECHA === toDelete.FECHA && t['N° CLIENTE'] === toDelete['N° CLIENTE'])
+            )
+        );
+    };
+    
 
     if (loading) return <div className="p-6">Cargando...</div>;
 
@@ -111,6 +141,7 @@ const Dashboard = () => {
     return (
         <div className="p-6 min-h-screen flex justify-center">
             <div className="w-full max-w-[1440px] space-y-6">
+                <FiltroDeTiempo />
 
                 <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard title="Transacciones" value={totals.transacciones} Icon={RefreshCcw} />
@@ -119,11 +150,9 @@ const Dashboard = () => {
                     <StatCard title="Ratio" value={`${totals.ratio.toFixed(2)}x`} Icon={BarChart3} />
                 </div>
 
-                <div className="grid grid-cols-1  lg:grid-cols-3 gap-6">
-
-                    {/* Actividad */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="bg-white p-6 rounded-xl shadow">
-                        <h2 className="text-xl font-semibold mb-4">Actividad</h2>
+                        <h2 className="text-xl font-semibold mb-4">Actividad reciente</h2>
                         <ul className="divide-y text-sm">
                             {recientes.map((t, idx) => {
                                 const monto = parseFloat(t['MONTO INGRESO']) || -parseFloat(t['MONTO EGRESO']) || 0;
@@ -142,7 +171,7 @@ const Dashboard = () => {
                             })}
                         </ul>
                     </div>
-                    {/* Vista general */}
+
                     <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow">
                         <h2 className="text-xl font-semibold mb-4">Vista general</h2>
                         {labels.length > 0 ? (
@@ -179,6 +208,8 @@ const Dashboard = () => {
                         )}
                     </div>
                 </div>
+
+
             </div>
         </div>
     );
