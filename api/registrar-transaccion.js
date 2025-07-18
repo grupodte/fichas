@@ -53,7 +53,6 @@ export default async function handler(req, res) {
         // 🧾 Fila ordenada
         const values = [[
             fecha,             // A - Fecha
-            hora,              // B - Hora
             nombre_cliente,    // C
             numero_cliente,    // D
             ingreso || '',     // E
