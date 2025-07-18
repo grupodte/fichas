@@ -1,7 +1,9 @@
 import { google } from 'googleapis';
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).json({ error: 'Método no permitido' });
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Método no permitido' });
+    }
 
     try {
         const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
@@ -11,60 +13,63 @@ export default async function handler(req, res) {
         });
 
         const sheets = google.sheets({ version: 'v4', auth });
-        const spreadsheetId = '1hxtoDqUNsVKj_R0gLV1ohb3LEf2fIjlXo2h-ghmHVU4';
+        const spreadsheetId = process.env.SHEET_ID || '1hxtoDqUNsVKj_R0gLV1ohb3LEf2fIjlXo2h-ghmHVU4';
 
+        // 🧩 Datos del body
         const {
-            nombre_cliente,
-            numero_cliente,
-            monto_ingreso,
-            cuenta_ingreso,
-            tipo_ingreso,
-            monto_egreso,
-            cuenta_egreso,
-            tipo_egreso,
-            concepto,
-            categoria_resultado,
-            metodo_pago,
-            control,
-            tipo_cambio,
-            otros_valores
+            nombre_cliente = '',
+            numero_cliente = '',
+            monto_ingreso = '',
+            cuenta_ingreso = '',
+            tipo_ingreso = '',
+            monto_egreso = '',
+            cuenta_egreso = '',
+            tipo_egreso = '',
+            concepto = '',
+            categoria_resultado = '',
+            metodo_pago = '',
+            control = '',
+            tipo_cambio = '',
+            otros_valores = ''
         } = req.body;
 
-        if (!nombre_cliente) {
-            return res.status(400).json({ error: 'El nombre del cliente es obligatorio.' });
+        // ✅ Validaciones más fuertes
+        if (!nombre_cliente.trim()) {
+            return res.status(400).json({ error: 'Debe seleccionar un cliente' });
         }
 
-        if (monto_ingreso && isNaN(parseFloat(monto_ingreso))) {
-            return res.status(400).json({ error: 'El monto de ingreso debe ser un número.' });
+        const ingreso = parseFloat(monto_ingreso || 0);
+        const egreso = parseFloat(monto_egreso || 0);
+        if (isNaN(ingreso) && isNaN(egreso)) {
+            return res.status(400).json({ error: 'Debe ingresar al menos un monto válido' });
         }
 
-        if (monto_egreso && isNaN(parseFloat(monto_egreso))) {
-            return res.status(400).json({ error: 'El monto de egreso debe ser un número.' });
-        }
+        // 🕒 Fecha + hora
+        const now = new Date();
+        const fecha = now.toLocaleDateString('es-UY');
+        const hora = now.toLocaleTimeString('es-UY');
+        const resultado = (ingreso - egreso).toFixed(2);
 
-        const fecha = new Date().toLocaleDateString('es-UY');
-        const resultado = (parseFloat(monto_ingreso || 0) - parseFloat(monto_egreso || 0)).toFixed(2);
-
-        const values = [
-            [
-                fecha,
-                nombre_cliente || '',
-                numero_cliente || '',
-                monto_ingreso || '',
-                cuenta_ingreso || '',
-                tipo_ingreso || '',
-                monto_egreso || '',
-                cuenta_egreso || '',
-                tipo_egreso || '',
-                resultado,
-                categoria_resultado || '',
-                concepto || '',
-                metodo_pago || '',
-                control || '',
-                tipo_cambio || '',
-                otros_valores || ''
-            ]
-        ];
+        // 🧾 Fila ordenada
+        const values = [[
+            fecha,             // A - Fecha
+            hora,              // B - Hora
+            nombre_cliente,    // C
+            numero_cliente,    // D
+            ingreso || '',     // E
+            cuenta_ingreso,    // F
+            tipo_ingreso,      // G
+            egreso || '',      // H
+            cuenta_egreso,     // I
+            tipo_egreso,       // J
+            resultado,         // K
+            categoria_resultado, // L
+            concepto,            // M
+            metodo_pago,         // N
+            control,             // O
+            tipo_cambio,         // P
+            otros_valores        // Q
+        ]];
 
         const response = await sheets.spreadsheets.values.append({
             spreadsheetId,
@@ -73,9 +78,20 @@ export default async function handler(req, res) {
             requestBody: { values }
         });
 
-        res.status(200).json({ mensaje: 'Transacción registrada', response });
+        return res.status(200).json({
+            mensaje: 'Transacción registrada con éxito',
+            resultado: {
+                cliente: nombre_cliente,
+                monto_neto: resultado,
+                hora,
+                fila: response.data.updates.updatedRange
+            }
+        });
     } catch (error) {
         console.error('ERROR REGISTRAR TRANSACCIÓN:', error);
-        res.status(500).json({ error: 'Error al registrar la transacción', detalle: error.message });
+        return res.status(500).json({
+            error: 'Error interno',
+            detalle: error.message
+        });
     }
 }
