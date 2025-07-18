@@ -5,6 +5,7 @@ import FormularioTransaccion from './FormularioTransaccion';
 import Dashboard from './Dashboard';
 import Login from './Login';
 import Layout from './Layout';
+import Dash from './Dash';
 
 function App() {
   return (
@@ -16,6 +17,8 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<FormularioTransaccion />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dash" element={<Dashboard />} />
+
           </Route>
         </Routes>
       </main>

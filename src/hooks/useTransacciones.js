@@ -1,26 +1,34 @@
-// src/hooks/useTransacciones.js
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
-// opensheet.elk.sh convierte los nombres de columna a minúsculas y sin espacios.
-// "MONTO INGRESO" se convierte en "monto_ingreso".
-const SHEET_URL = 'https://opensheet.elk.sh/1hxtoDqUNsVKj_R0gLV1ohb3LEf2fIjlXo2h-ghmHVU4/TRANSACCIONES';
-
-export function useTransacciones() {
+export const useTransacciones = () => {
     const [transacciones, setTransacciones] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setLoading(true);
-        fetch(SHEET_URL)
-            .then(res => res.json())
-            .then(data => {
-                // Filtramos filas vacías que a veces aparecen
-                const a_transactions = data.filter(row => row.fecha && row.fecha.trim() !== '');
-                setTransacciones(a_transactions);
-            })
-            .catch(error => console.error("Error fetching transactions:", error))
-            .finally(() => setLoading(false));
+        const fetchTransacciones = async () => {
+            try {
+                const url = import.meta.env.VITE_API_URL_TRANSACCIONES;
+                console.log('🔍 Fetching transacciones from:', url);
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`Error HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('✅ Transacciones recibidas:', data);
+
+                setTransacciones(data.transacciones || []);
+            } catch (err) {
+                console.error('❌ Error al cargar transacciones:', err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTransacciones();
     }, []);
 
     return { transacciones, loading };
-}
+};
