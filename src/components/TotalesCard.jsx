@@ -1,59 +1,77 @@
-const TotalesCard = ({ transacciones }) => {
-    const calcularTotales = () => {
-        let ingresosUYU = 0, ingresosUSD = 0;
-        let egresosUYU = 0, egresosUSD = 0;
+// TotalesCard.jsx
+import { DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
 
-        transacciones.forEach(t => {
-            const cuentaIngreso = t.cuenta_ingreso?.toUpperCase() || '';
-            const cuentaEgreso = t.cuenta_egreso?.toUpperCase() || '';
+const formatCurrency = (amount) =>
+    amount.toLocaleString('es-UY', {
+        style: 'currency',
+        currency: 'UYU',
+        maximumFractionDigits: 0,
+    });
 
-            const montoIngreso = parseFloat(t.tipo_ingreso);
-            const montoEgreso = parseFloat(t.tipo_egreso);
-
-            if (!isNaN(montoIngreso)) {
-                if (cuentaIngreso.includes("PESO")) ingresosUYU += montoIngreso;
-                else ingresosUSD += montoIngreso;
-            }
-
-            if (!isNaN(montoEgreso)) {
-                if (cuentaEgreso.includes("PESO")) egresosUYU += montoEgreso;
-                else egresosUSD += montoEgreso;
-            }
-        });
-
-        return {
-            ingresosUYU,
-            egresosUYU,
-            saldoUYU: ingresosUYU - egresosUYU,
-            ingresosUSD,
-            egresosUSD,
-            saldoUSD: ingresosUSD - egresosUSD
-        };
+export default function TotalesCard({ transacciones }) {
+    const stats = {
+        usd: { ingreso: 0, egreso: 0 },
+        pesos: { ingreso: 0, egreso: 0 },
     };
 
-    const {
-        ingresosUYU, egresosUYU, saldoUYU,
-        ingresosUSD, egresosUSD, saldoUSD
-    } = calcularTotales();
+    transacciones.forEach((t) => {
+        const cuentaIng = (t.cuenta_ingreso || '').toLowerCase();
+        const cuentaEgr = (t.cuenta_egreso || '').toLowerCase();
 
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <h2 className="text-lg font-semibold mb-2">Pesos Uruguayos (UYU)</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <StatCard title="Ingresos" value={`$${ingresosUYU.toFixed(0)}`} Icon={ArrowUp} colorClass="text-green-600" />
-                    <StatCard title="Egresos" value={`$${egresosUYU.toFixed(0)}`} Icon={ArrowDown} colorClass="text-red-600" />
-                    <StatCard title="Saldo" value={`$${saldoUYU.toFixed(0)}`} Icon={DollarSign} colorClass={saldoUYU >= 0 ? "text-blue-600" : "text-orange-500"} />
+        const ingreso = parseFloat(t.tipo_ingreso) || 0;
+        const egreso = parseFloat(t.tipo_egreso) || 0;
+
+        if (cuentaIng.includes('usd')) {
+            stats.usd.ingreso += ingreso;
+        } else {
+            stats.pesos.ingreso += ingreso;
+        }
+
+        if (cuentaEgr.includes('usd')) {
+            stats.usd.egreso += egreso;
+        } else {
+            stats.pesos.egreso += egreso;
+        }
+    });
+
+    const Card = ({ title, value, icon, color }) => (
+        <div className={`flex-1 bg-white rounded-xl p-4 shadow border-l-4 ${color}`}>
+            <div className="flex justify-between items-center">
+                <div>
+                    <p className="text-sm text-gray-500">{title}</p>
+                    <p className="text-xl font-bold">{formatCurrency(value)}</p>
                 </div>
-            </div>
-            <div>
-                <h2 className="text-lg font-semibold mb-2">Dólares (USD)</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <StatCard title="Ingresos" value={`$${ingresosUSD.toFixed(2)}`} Icon={ArrowUp} colorClass="text-green-600" />
-                    <StatCard title="Egresos" value={`$${egresosUSD.toFixed(2)}`} Icon={ArrowDown} colorClass="text-red-600" />
-                    <StatCard title="Saldo" value={`$${saldoUSD.toFixed(2)}`} Icon={DollarSign} colorClass={saldoUSD >= 0 ? "text-blue-600" : "text-orange-500"} />
-                </div>
+                {icon}
             </div>
         </div>
     );
-};
+
+    return (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Card
+                title="Ingreso USD"
+                value={stats.usd.ingreso}
+                icon={<TrendingUp className="text-green-500" />}
+                color="border-green-500"
+            />
+            <Card
+                title="Egreso USD"
+                value={stats.usd.egreso}
+                icon={<TrendingDown className="text-red-500" />}
+                color="border-red-500"
+            />
+            <Card
+                title="Ingreso PESOS"
+                value={stats.pesos.ingreso}
+                icon={<TrendingUp className="text-green-500" />}
+                color="border-green-500"
+            />
+            <Card
+                title="Egreso PESOS"
+                value={stats.pesos.egreso}
+                icon={<TrendingDown className="text-red-500" />}
+                color="border-red-500"
+            />
+        </div>
+    );
+}
