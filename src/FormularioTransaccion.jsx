@@ -3,22 +3,35 @@ import { supabase } from './config/supabaseClient';
 import { toast } from 'react-hot-toast';
 
 const FormularioTransaccion = ({ usuarioId, empresaId }) => {
+    const [clientes, setClientes] = useState([]);
     const [cuentas, setCuentas] = useState([]);
-    const [activosDisponibles, setActivosDisponibles] = useState([]);
+
     const [formData, setFormData] = useState({
-        cuenta_id: null,
+        cliente_id: null,
+        cuenta_origen_id: null,
+        cuenta_origen_activo_id: null,
+        monto_egreso: '',
+        cuenta_destino_id: null,
         cuenta_destino_activo_id: null,
         monto_ingreso: '',
-        categoria_resultado_id: null,
-        cliente_id: null,
+        tasa_cambio: '',
         descripcion: ''
     });
+
+    const [activosOrigen, setActivosOrigen] = useState([]);
+    const [activosDestino, setActivosDestino] = useState([]);
     const [enviando, setEnviando] = useState(false);
 
-    // Cargar cuentas con sus activos y divisas
+    // Cargar clientes y cuentas
     useEffect(() => {
         const fetchData = async () => {
-            const { data, error } = await supabase
+            const { data: clientesData } = await supabase
+                .from('clientes')
+                .select('id, nombre')
+                .eq('empresa_id', empresaId);
+            setClientes(clientesData || []);
+
+            const { data: cuentasData } = await supabase
                 .from('cuentas')
                 .select(`
           id, nombre,
@@ -29,37 +42,53 @@ const FormularioTransaccion = ({ usuarioId, empresaId }) => {
           )
         `)
                 .eq('empresa_id', empresaId);
-            if (error) {
-                toast.error('Error cargando cuentas');
-                return;
-            }
-            setCuentas(data || []);
+            setCuentas(cuentasData || []);
         };
         fetchData();
     }, [empresaId]);
 
-    // Cuando elige cuenta, cargar activos
+    // Actualizar activos disponibles al elegir cuenta origen
     useEffect(() => {
-        if (!formData.cuenta_id) return;
-        const cuenta = cuentas.find(c => c.id === formData.cuenta_id);
+        if (!formData.cuenta_origen_id) return;
+        const cuenta = cuentas.find(c => c.id === formData.cuenta_origen_id);
         if (!cuenta) return;
         const activos = cuenta.cuentas_activos.map(ca => ({
             label: `${ca.activo.nombre} (${ca.divisa.codigo})`,
             value: ca.id
         }));
-        setActivosDisponibles(activos);
+        setActivosOrigen(activos);
         if (activos.length === 1) {
-            // Autoseleccionar si solo hay uno
+            setFormData(prev => ({ ...prev, cuenta_origen_activo_id: activos[0].value }));
+        } else {
+            setFormData(prev => ({ ...prev, cuenta_origen_activo_id: null }));
+        }
+    }, [formData.cuenta_origen_id]);
+
+    // Actualizar activos disponibles al elegir cuenta destino
+    useEffect(() => {
+        if (!formData.cuenta_destino_id) return;
+        const cuenta = cuentas.find(c => c.id === formData.cuenta_destino_id);
+        if (!cuenta) return;
+        const activos = cuenta.cuentas_activos.map(ca => ({
+            label: `${ca.activo.nombre} (${ca.divisa.codigo})`,
+            value: ca.id
+        }));
+        setActivosDestino(activos);
+        if (activos.length === 1) {
             setFormData(prev => ({ ...prev, cuenta_destino_activo_id: activos[0].value }));
         } else {
             setFormData(prev => ({ ...prev, cuenta_destino_activo_id: null }));
         }
-    }, [formData.cuenta_id]);
+    }, [formData.cuenta_destino_id]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.cuenta_destino_activo_id || !formData.monto_ingreso) {
-            toast.error('Selecciona cuenta y monto');
+        if (!formData.cuenta_origen_activo_id && !formData.cuenta_destino_activo_id) {
+            toast.error('Debes seleccionar al menos una cuenta');
+            return;
+        }
+        if (!formData.monto_egreso && !formData.monto_ingreso) {
+            toast.error('Debes ingresar al menos un monto');
             return;
         }
 
@@ -77,11 +106,14 @@ const FormularioTransaccion = ({ usuarioId, empresaId }) => {
             if (!res.ok) throw new Error(result.error || 'Error al registrar');
             toast.success(result.mensaje || 'Transacción registrada');
             setFormData({
-                cuenta_id: null,
+                cliente_id: null,
+                cuenta_origen_id: null,
+                cuenta_origen_activo_id: null,
+                monto_egreso: '',
+                cuenta_destino_id: null,
                 cuenta_destino_activo_id: null,
                 monto_ingreso: '',
-                categoria_resultado_id: null,
-                cliente_id: null,
+                tasa_cambio: '',
                 descripcion: ''
             });
         } catch (err) {
@@ -96,45 +128,97 @@ const FormularioTransaccion = ({ usuarioId, empresaId }) => {
             <form onSubmit={handleSubmit} className="max-w-lg md:min-w-[400px] mx-auto bg-white/10 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-white/30">
                 <h2 className="text-2xl font-bold text-white mb-4 text-center">Registrar Transacción</h2>
 
-                {/* Cuenta */}
+                {/* Cliente */}
                 <div className="mb-4">
-                    <label className="text-white block mb-2">Cuenta</label>
+                    <label className="text-white block mb-2">Cliente</label>
                     <select
-                        value={formData.cuenta_id || ''}
-                        onChange={e => setFormData(prev => ({ ...prev, cuenta_id: e.target.value }))}
+                        value={formData.cliente_id || ''}
+                        onChange={e => setFormData(prev => ({ ...prev, cliente_id: e.target.value }))}
                         className="w-full p-2 rounded-lg bg-white/10 text-white"
                     >
-                        <option value="">Seleccionar</option>
-                        {cuentas.map(c => (
+                        <option value="">Sin cliente</option>
+                        {clientes.map(c => (
                             <option key={c.id} value={c.id}>{c.nombre}</option>
                         ))}
                     </select>
                 </div>
 
-                {/* Activo + Divisa */}
-                {activosDisponibles.length > 1 && (
-                    <div className="mb-4">
-                        <label className="text-white block mb-2">Activo / Divisa</label>
+                {/* Cuenta Egreso */}
+                <h3 className="text-white font-semibold mb-2 mt-4">Cuenta Egreso</h3>
+                <div className="mb-4">
+                    <select
+                        value={formData.cuenta_origen_id || ''}
+                        onChange={e => setFormData(prev => ({ ...prev, cuenta_origen_id: e.target.value }))}
+                        className="w-full p-2 rounded-lg bg-white/10 text-white mb-2"
+                    >
+                        <option value="">Seleccionar cuenta</option>
+                        {cuentas.map(c => (
+                            <option key={c.id} value={c.id}>{c.nombre}</option>
+                        ))}
+                    </select>
+                    {activosOrigen.length > 1 && (
+                        <select
+                            value={formData.cuenta_origen_activo_id || ''}
+                            onChange={e => setFormData(prev => ({ ...prev, cuenta_origen_activo_id: e.target.value }))}
+                            className="w-full p-2 rounded-lg bg-white/10 text-white"
+                        >
+                            <option value="">Seleccionar activo/divisa</option>
+                            {activosOrigen.map(a => (
+                                <option key={a.value} value={a.value}>{a.label}</option>
+                            ))}
+                        </select>
+                    )}
+                    <input
+                        type="number"
+                        placeholder="Monto egreso"
+                        value={formData.monto_egreso}
+                        onChange={e => setFormData(prev => ({ ...prev, monto_egreso: e.target.value }))}
+                        className="w-full mt-2 p-2 rounded-lg bg-white/10 text-white"
+                    />
+                </div>
+
+                {/* Cuenta Ingreso */}
+                <h3 className="text-white font-semibold mb-2 mt-4">Cuenta Ingreso</h3>
+                <div className="mb-4">
+                    <select
+                        value={formData.cuenta_destino_id || ''}
+                        onChange={e => setFormData(prev => ({ ...prev, cuenta_destino_id: e.target.value }))}
+                        className="w-full p-2 rounded-lg bg-white/10 text-white mb-2"
+                    >
+                        <option value="">Seleccionar cuenta</option>
+                        {cuentas.map(c => (
+                            <option key={c.id} value={c.id}>{c.nombre}</option>
+                        ))}
+                    </select>
+                    {activosDestino.length > 1 && (
                         <select
                             value={formData.cuenta_destino_activo_id || ''}
                             onChange={e => setFormData(prev => ({ ...prev, cuenta_destino_activo_id: e.target.value }))}
                             className="w-full p-2 rounded-lg bg-white/10 text-white"
                         >
-                            <option value="">Seleccionar</option>
-                            {activosDisponibles.map(a => (
+                            <option value="">Seleccionar activo/divisa</option>
+                            {activosDestino.map(a => (
                                 <option key={a.value} value={a.value}>{a.label}</option>
                             ))}
                         </select>
-                    </div>
-                )}
-
-                {/* Monto */}
-                <div className="mb-4">
-                    <label className="text-white block mb-2">Monto</label>
+                    )}
                     <input
                         type="number"
+                        placeholder="Monto ingreso"
                         value={formData.monto_ingreso}
                         onChange={e => setFormData(prev => ({ ...prev, monto_ingreso: e.target.value }))}
+                        className="w-full mt-2 p-2 rounded-lg bg-white/10 text-white"
+                    />
+                </div>
+
+                {/* Tipo de cambio */}
+                <div className="mb-4">
+                    <label className="text-white block mb-2">Tipo de cambio</label>
+                    <input
+                        type="number"
+                        placeholder="Tasa si aplica"
+                        value={formData.tasa_cambio}
+                        onChange={e => setFormData(prev => ({ ...prev, tasa_cambio: e.target.value }))}
                         className="w-full p-2 rounded-lg bg-white/10 text-white"
                     />
                 </div>
