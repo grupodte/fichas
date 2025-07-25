@@ -6,58 +6,30 @@ import DropdownSelect from './components/DropdownSelect';
 const FormularioTransaccion = () => {
     const [clientes, setClientes] = useState([]);
     const [cuentas, setCuentas] = useState([]);
-    const [categorias, setCategorias] = useState([]);
     const [enviando, setEnviando] = useState(false);
 
     const [formData, setFormData] = useState({
         cliente_id: null,
-        cuenta_origen_id: null,
-        cuenta_destino_id: null,
-        monto_ingreso: '',
-        monto_egreso: '',
-        categoria_resultado_id: null,
-        descripcion: '',
-        fecha: new Date().toISOString().split('T')[0],
+        cuenta_id: null,
     });
 
-    // Cargar datos iniciales
+    // Cargar clientes y cuentas
     useEffect(() => {
         const fetchData = async () => {
             const { data: clientesData } = await supabase.from('clientes').select('id, nombre');
             const { data: cuentasData } = await supabase.from('cuentas').select('id, nombre');
-            const { data: categoriasData } = await supabase.from('categorias_resultado').select('id, nombre');
-
             setClientes((clientesData || []).map(c => ({ label: c.nombre, value: c.id })));
             setCuentas((cuentasData || []).map(c => ({ label: c.nombre, value: c.id })));
-            setCategorias((categoriasData || []).map(cat => ({ label: cat.nombre, value: cat.id })));
         };
         fetchData();
     }, []);
 
-    const handleChange = (e) => {
-        setFormData(prev => ({
-            ...prev,
-            [e.target.name]: e.target.value,
-        }));
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Validaciones
-        if (!formData.cliente_id) {
-            toast.error('Selecciona un cliente');
+        if (!formData.cliente_id || !formData.cuenta_id) {
+            toast.error('Selecciona cliente y cuenta');
             return;
         }
-        if (!formData.categoria_resultado_id) {
-            toast.error('Selecciona una categoría');
-            return;
-        }
-        if (!formData.monto_ingreso && !formData.monto_egreso) {
-            toast.error('Ingresa al menos un monto');
-            return;
-        }
-
         setEnviando(true);
         try {
             const res = await fetch('/api/registrar-transaccion', {
@@ -66,23 +38,12 @@ const FormularioTransaccion = () => {
                 body: JSON.stringify(formData),
             });
             const result = await res.json();
-
-            if (!res.ok) throw new Error(result.error || 'Error al registrar transacción');
-
+            if (!res.ok) throw new Error(result.error || 'Error al registrar');
             toast.success(result.mensaje || 'Transacción registrada');
-            setFormData({
-                cliente_id: null,
-                cuenta_origen_id: null,
-                cuenta_destino_id: null,
-                monto_ingreso: '',
-                monto_egreso: '',
-                categoria_resultado_id: null,
-                descripcion: '',
-                fecha: new Date().toISOString().split('T')[0],
-            });
+            setFormData({ cliente_id: null, cuenta_id: null });
         } catch (err) {
             console.error(err);
-            toast.error(err.message || 'Error al registrar transacción');
+            toast.error(err.message || 'Error al registrar');
         } finally {
             setEnviando(false);
         }
@@ -94,7 +55,7 @@ const FormularioTransaccion = () => {
                 onSubmit={handleSubmit}
                 className="max-w-lg md:min-w-[400px] mx-auto bg-white/10 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-white/30"
             >
-                <h2 className="text-2xl font-bold text-white mb-4 text-center">Registrar Transacción</h2>
+                <h2 className="text-2xl font-bold text-white mb-4 text-center">Registrar</h2>
 
                 <div className="flex flex-col gap-4">
                     <DropdownSelect
@@ -104,59 +65,11 @@ const FormularioTransaccion = () => {
                         onChange={(val) => setFormData(prev => ({ ...prev, cliente_id: val }))}
                     />
 
-                    <input
-                        type="date"
-                        name="fecha"
-                        value={formData.fecha}
-                        onChange={handleChange}
-                        className="input-base py-2 px-3 text-sm bg-white/10 backdrop-blur-md w-full text-white"
-                    />
-
-                    <input
-                        name="monto_ingreso"
-                        type="number"
-                        placeholder="Monto ingreso"
-                        value={formData.monto_ingreso}
-                        onChange={handleChange}
-                        className="input-base py-2 px-3 text-sm bg-white/10 backdrop-blur-md w-full text-white border-green-400"
-                    />
-
                     <DropdownSelect
-                        label="Cuenta destino"
+                        label="Cuenta"
                         options={cuentas}
-                        value={formData.cuenta_destino_id}
-                        onChange={(val) => setFormData(prev => ({ ...prev, cuenta_destino_id: val }))}
-                    />
-
-                    <input
-                        name="monto_egreso"
-                        type="number"
-                        placeholder="Monto egreso"
-                        value={formData.monto_egreso}
-                        onChange={handleChange}
-                        className="input-base py-2 px-3 text-sm bg-white/10 backdrop-blur-md w-full text-white border-red-400"
-                    />
-
-                    <DropdownSelect
-                        label="Cuenta origen"
-                        options={cuentas}
-                        value={formData.cuenta_origen_id}
-                        onChange={(val) => setFormData(prev => ({ ...prev, cuenta_origen_id: val }))}
-                    />
-
-                    <DropdownSelect
-                        label="Categoría"
-                        options={categorias}
-                        value={formData.categoria_resultado_id}
-                        onChange={(val) => setFormData(prev => ({ ...prev, categoria_resultado_id: val }))}
-                    />
-
-                    <textarea
-                        name="descripcion"
-                        placeholder="Descripción"
-                        value={formData.descripcion}
-                        onChange={handleChange}
-                        className="input-base py-2 px-3 text-sm bg-white/10 backdrop-blur-md w-full text-white"
+                        value={formData.cuenta_id}
+                        onChange={(val) => setFormData(prev => ({ ...prev, cuenta_id: val }))}
                     />
                 </div>
 
@@ -167,7 +80,7 @@ const FormularioTransaccion = () => {
                         className={`w-full bg-black/30 text-white text-lg py-3 rounded-xl shadow-xl transition ${enviando ? 'opacity-50 cursor-not-allowed' : 'hover:ring-2 hover:ring-white'
                             }`}
                     >
-                        {enviando ? 'Enviando...' : 'Guardar transacción'}
+                        {enviando ? 'Enviando...' : 'Guardar'}
                     </button>
                 </div>
             </form>
