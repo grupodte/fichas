@@ -1,5 +1,6 @@
 import React from "react";
 import { Navigate, Outlet, useNavigate } from "react-router-dom";
+import Sidebar from "./components/Sidebar"; // Asegúrate de que esta ruta sea correcta
 
 const Layout = () => {
     const navigate = useNavigate();
@@ -15,10 +16,14 @@ const Layout = () => {
     }
 
     return (
-        <div>
-            <main>
+        <div className="flex min-h-screen bg-gray-100">
+            {/* Barra lateral */}
+            <Sidebar onLogout={handleLogout} />
+
+            {/* Contenido principal */}
+            <div className="flex-1 p-6">
                 <Outlet />
-            </main>
+            </div>
         </div>
     );
 };
