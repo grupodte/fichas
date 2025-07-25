@@ -1,6 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import Navbar from './components/NavBar/Navbar'; // Ruta corregida con minúscula y relativa a src/
 import FormularioTransaccion from './FormularioTransaccion';
 import Dashboard from './Dashboard';
 import Login from './Login';
