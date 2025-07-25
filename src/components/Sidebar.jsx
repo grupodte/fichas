@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { FiMenu, FiX, FiHome, FiSettings, FiUser } from "react-icons/fi";
 
 const Sidebar = () => {
@@ -27,18 +28,18 @@ const Sidebar = () => {
                 </div>
 
                 <nav className="mt-6 space-y-4">
-                    <div className="flex items-center gap-4 px-4 py-2 hover:bg-gray-800 cursor-pointer">
+                    <Link to="/" className="flex items-center gap-4 px-4 py-2 hover:bg-gray-800 cursor-pointer">
                         <FiHome size={20} />
                         {isOpen && <span>Inicio</span>}
-                    </div>
-                    <div className="flex items-center gap-4 px-4 py-2 hover:bg-gray-800 cursor-pointer">
+                    </Link>
+                    <Link to="/dashboard" className="flex items-center gap-4 px-4 py-2 hover:bg-gray-800 cursor-pointer">
                         <FiUser size={20} />
-                        {isOpen && <span>Perfil</span>}
-                    </div>
-                    <div className="flex items-center gap-4 px-4 py-2 hover:bg-gray-800 cursor-pointer">
+                        {isOpen && <span>Dashboard</span>}
+                    </Link>
+                    <Link to="/dash" className="flex items-center gap-4 px-4 py-2 hover:bg-gray-800 cursor-pointer">
                         <FiSettings size={20} />
-                        {isOpen && <span>Configuración</span>}
-                    </div>
+                        {isOpen && <span>Dash</span>}
+                    </Link>
                 </nav>
             </motion.div>
 
