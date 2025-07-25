@@ -27,7 +27,6 @@ function App() {
               <Route path="transacciones" element={<Transacciones />} />
               <Route path="dashboard" element={<Dashboard />} />
             </Route>
-            <Route path="dash" element={<Dash />} />
             <Route index element={<div>Seleccione una empresa</div>} />
           </Route>
         </Routes>
