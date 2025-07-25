@@ -4,13 +4,16 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import './index.css';
 import { DateRangeProvider } from './context/DateRangeContext.jsx';
+import { AuthProvider } from './context/AuthContext.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <DateRangeProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </DateRangeProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <DateRangeProvider>
+          <App />
+        </DateRangeProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </StrictMode>
 );

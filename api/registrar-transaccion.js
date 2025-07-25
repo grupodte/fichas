@@ -20,11 +20,12 @@ export default async function handler(req, res) {
             categoria_resultado_id,
             descripcion,
             fecha,
-            empresa_id
+            empresa_id,
+            tasa_cambio
         } = req.body;
 
-        if (!categoria_resultado_id || (!monto_ingreso && !monto_egreso)) {
-            return res.status(400).json({ error: 'Datos incompletos' });
+        if (!empresa_id || !categoria_resultado_id || (!monto_ingreso && !monto_egreso)) {
+            return res.status(400).json({ error: 'Faltan datos obligatorios: empresa, categoría y al menos un monto son requeridos.' });
         }
 
         const { error } = await supabaseAdmin
@@ -34,12 +35,13 @@ export default async function handler(req, res) {
                     cliente_id: cliente_id || null,
                     cuenta_origen_activo_id: cuenta_origen_activo_id || null,
                     cuenta_destino_activo_id: cuenta_destino_activo_id || null,
-                    monto_ingreso: monto_ingreso ? parseFloat(monto_ingreso) : 0,
-                    monto_egreso: monto_egreso ? parseFloat(monto_egreso) : 0,
+                    monto_ingreso: monto_ingreso ? parseFloat(monto_ingreso) : null,
+                    monto_egreso: monto_egreso ? parseFloat(monto_egreso) : null,
+                    tasa_cambio: tasa_cambio ? parseFloat(tasa_cambio) : null,
                     categoria_resultado_id,
                     descripcion,
                     fecha: fecha || new Date().toISOString().split('T')[0],
-                    empresa_id: empresa_id || 'EMPRESA-UUID-DEFAULT'
+                    empresa_id: empresa_id
                 }
             ]);
 

@@ -1,37 +1,62 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import { toast } from 'react-hot-toast';
 
 const Login = () => {
-    const [secretKey, setSecretKey] = useState("");
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const { signIn } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (secretKey === import.meta.env.VITE_SECRET_KEY) {
-            localStorage.setItem("secret-key-authenticated", "true");
-            navigate("/");
+        setLoading(true);
+        const { error } = await signIn({ email, password });
+        if (error) {
+            toast.error(error.message);
         } else {
-            alert("Clave secreta incorrecta");
+            toast.success('¡Bienvenido!');
+            navigate('/');
         }
+        setLoading(false);
     };
 
     return (
         <div className="min-h-screen w-full flex items-center justify-center bg-[url('/fondo.jpg')] bg-cover bg-center">
             <div className="backdrop-blur-lg bg-white/10 p-8 rounded-xl shadow-2xl max-w-sm w-full">
-                <h1 className="text-2xl font-semibold text-white mb-6 text-center">Login</h1>
+                <h1 className="text-2xl font-semibold text-white mb-6 text-center">Iniciar Sesión</h1>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label
-                            htmlFor="secret-key"
+                            htmlFor="email"
                             className="block text-sm font-medium text-white mb-1"
                         >
-                            Clave secreta
+                            Email
+                        </label>
+                        <input
+                            type="email"
+                            id="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            className="w-full px-4 py-2 rounded-md bg-white/20 text-white placeholder-white/60 outline-none focus:ring-2 focus:ring-white"
+                            placeholder="tu@email.com"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            htmlFor="password"
+                            className="block text-sm font-medium text-white mb-1"
+                        >
+                            Contraseña
                         </label>
                         <input
                             type="password"
-                            id="secret-key"
-                            value={secretKey}
-                            onChange={(e) => setSecretKey(e.target.value)}
+                            id="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             required
                             className="w-full px-4 py-2 rounded-md bg-white/20 text-white placeholder-white/60 outline-none focus:ring-2 focus:ring-white"
                             placeholder="••••••••"
@@ -39,9 +64,10 @@ const Login = () => {
                     </div>
                     <button
                         type="submit"
-                        className="w-full py-2 bg-white/20 hover:bg-white/30 text-white font-semibold rounded-md transition"
+                        disabled={loading}
+                        className="w-full py-2 bg-white/20 hover:bg-white/30 text-white font-semibold rounded-md transition disabled:opacity-50"
                     >
-                        Iniciar sesión
+                        {loading ? 'Iniciando...' : 'Iniciar Sesión'}
                     </button>
                 </form>
             </div>

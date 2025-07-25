@@ -1,10 +1,13 @@
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import FormularioTransaccion from './FormularioTransaccion';
+import Transacciones from './Transacciones';
 import Dashboard from './Dashboard';
 import Login from './Login';
 import Layout from './Layout';
 import Dash from './Dash';
+import EmpresaLayout from './EmpresaLayout';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -12,11 +15,21 @@ function App() {
       <main className="main-content">
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route element={<Layout />}>
-            <Route path="/" element={<FormularioTransaccion />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dash" element={<Dash />} />
-
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="empresa/:empresaId" element={<EmpresaLayout />}>
+              <Route path="registrar" element={<FormularioTransaccion />} />
+              <Route path="transacciones" element={<Transacciones />} />
+              <Route path="dashboard" element={<Dashboard />} />
+            </Route>
+            <Route path="dash" element={<Dash />} />
+            <Route index element={<div>Seleccione una empresa</div>} />
           </Route>
         </Routes>
       </main>

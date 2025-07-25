@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './config/supabaseClient';
 import { toast } from 'react-hot-toast';
+import { useOutletContext } from 'react-router-dom';
 
-const FormularioTransaccion = ({ usuarioId, empresaId }) => {
+const FormularioTransaccion = () => {
+    const { empresaId } = useOutletContext();
     const [clientes, setClientes] = useState([]);
     const [cuentas, setCuentas] = useState([]);
+    const [categorias, setCategorias] = useState([]);
     const [activosOrigen, setActivosOrigen] = useState([]);
     const [activosDestino, setActivosDestino] = useState([]);
     const [enviando, setEnviando] = useState(false);
@@ -18,7 +21,8 @@ const FormularioTransaccion = ({ usuarioId, empresaId }) => {
         cuenta_destino_activo_id: null,
         monto_ingreso: '',
         tasa_cambio: '',
-        descripcion: ''
+        descripcion: '',
+        categoria_resultado_id: null
     });
 
     // Cargar clientes y cuentas con activos + divisas
@@ -30,6 +34,12 @@ const FormularioTransaccion = ({ usuarioId, empresaId }) => {
                     .select('id, nombre')
                     .eq('empresa_id', empresaId);
                 setClientes(clientesData || []);
+
+                const { data: categoriasData } = await supabase
+                    .from('categorias_resultado')
+                    .select('id, nombre')
+                    .eq('empresa_id', empresaId);
+                setCategorias(categoriasData || []);
 
                 const { data: cuentasData, error } = await supabase
                     .from('cuentas')
@@ -107,6 +117,11 @@ const FormularioTransaccion = ({ usuarioId, empresaId }) => {
         const divisaDestino = activosDestino.find(a => a.value === formData.cuenta_destino_activo_id)?.divisa;
         if (divisaOrigen && divisaDestino && divisaOrigen !== divisaDestino && !formData.tasa_cambio) {
             toast.error('Debes ingresar la tasa de cambio cuando las divisas son diferentes');
+            return;
+        }
+
+        if (!formData.categoria_resultado_id) {
+            toast.error('Debes seleccionar una categoría');
             return;
         }
 
@@ -245,6 +260,21 @@ const FormularioTransaccion = ({ usuarioId, empresaId }) => {
                         onChange={e => setFormData(prev => ({ ...prev, descripcion: e.target.value }))}
                         className="w-full p-2 rounded-lg bg-white/10 text-white"
                     />
+                </div>
+
+                {/* Categoría */}
+                <div className="mb-4">
+                    <label className="text-white block mb-2">Categoría</label>
+                    <select
+                        value={formData.categoria_resultado_id || ''}
+                        onChange={e => setFormData(prev => ({ ...prev, categoria_resultado_id: e.target.value }))}
+                        className="w-full p-2 rounded-lg bg-white/10 text-white"
+                    >
+                        <option value="">Seleccionar categoría</option>
+                        {categorias.map(c => (
+                            <option key={c.id} value={c.id}>{c.nombre}</option>
+                        ))}
+                    </select>
                 </div>
 
                 <div className="mt-6">
