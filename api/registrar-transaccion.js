@@ -1,4 +1,10 @@
-import { google } from 'googleapis';
+// /api/registrar-transaccion.js
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseAdmin = createClient(
+    process.env.VITE_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY // clave segura solo para backend
+);
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -6,91 +12,42 @@ export default async function handler(req, res) {
     }
 
     try {
-        const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
-        const auth = new google.auth.GoogleAuth({
-            credentials,
-            scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-        });
-
-        const sheets = google.sheets({ version: 'v4', auth });
-        const spreadsheetId = process.env.SHEET_ID || '1hxtoDqUNsVKj_R0gLV1ohb3LEf2fIjlXo2h-ghmHVU4';
-
-        // 🧩 Datos del body
         const {
-            nombre_cliente = '',
-            numero_cliente = '',
-            monto_ingreso = '',
-            cuenta_ingreso = '',
-            tipo_ingreso = '',
-            monto_egreso = '',
-            cuenta_egreso = '',
-            tipo_egreso = '',
-            concepto = '',
-            categoria_resultado = '',
-            metodo_pago = '',
-            control = '',
-            tipo_cambio = '',
-            otros_valores = ''
+            cliente_id,
+            cuenta_origen_id,
+            cuenta_destino_id,
+            monto_ingreso,
+            monto_egreso,
+            categoria_resultado_id,
+            descripcion,
+            fecha
         } = req.body;
 
-        // ✅ Validaciones más fuertes
-        if (!nombre_cliente.trim()) {
-            return res.status(400).json({ error: 'Debe seleccionar un cliente' });
+        if (!cliente_id || !categoria_resultado_id || (!monto_ingreso && !monto_egreso)) {
+            return res.status(400).json({ error: 'Datos incompletos' });
         }
 
-        const ingreso = parseFloat(monto_ingreso || 0);
-        const egreso = parseFloat(monto_egreso || 0);
-        if (isNaN(ingreso) && isNaN(egreso)) {
-            return res.status(400).json({ error: 'Debe ingresar al menos un monto válido' });
-        }
+        const { error } = await supabaseAdmin
+            .from('transacciones')
+            .insert([
+                {
+                    cliente_id,
+                    cuenta_origen_id: cuenta_origen_id || null,
+                    cuenta_destino_id: cuenta_destino_id || null,
+                    monto_ingreso: monto_ingreso ? parseFloat(monto_ingreso) : 0,
+                    monto_egreso: monto_egreso ? parseFloat(monto_egreso) : 0,
+                    categoria_resultado_id,
+                    descripcion,
+                    fecha: fecha || new Date().toISOString().split('T')[0],
+                    empresa_id: 'EMPRESA-UUID-DEFAULT' // si trabajas multiempresa puedes tomarla del token/session
+                }
+            ]);
 
-        // 🕒 Fecha + hora
-        const now = new Date();
-        const fecha = now.toLocaleDateString('es-UY');
-        const hora = now.toLocaleTimeString('es-UY');
-        const resultado = (ingreso - egreso).toFixed(2);
+        if (error) throw error;
 
-        // 🧾 Fila ordenada
-        const values = [[
-            fecha,             // A - Fecha
-            nombre_cliente,    // C
-            numero_cliente,    // D
-            ingreso || '',     // E
-            cuenta_ingreso,    // F
-            tipo_ingreso,      // G
-            egreso || '',      // H
-            cuenta_egreso,     // I
-            tipo_egreso,       // J
-            resultado,         // K
-            categoria_resultado, // L
-            concepto,            // M
-            metodo_pago,         // N
-            control,             // O
-            tipo_cambio,         // P
-            otros_valores        // Q
-        ]];
-
-        const response = await sheets.spreadsheets.values.append({
-            spreadsheetId,
-            range: 'TRANSACCIONES!B2',
-            valueInputOption: 'USER_ENTERED',
-            requestBody: { values }
-        });
-
-        return res.status(200).json({
-            mensaje: 'Transacción registrada con éxito',
-            resultado: {
-                cliente: nombre_cliente,
-                monto_neto: resultado,
-                hora,
-                fila: response.data.updates.updatedRange
-            }
-        });
-    } catch (error) {
-        console.error('ERROR REGISTRAR TRANSACCIÓN:', error);
-        return res.status(500).json({
-            error: 'Error interno',
-            detalle: error.message
-        });
+        return res.status(200).json({ mensaje: 'Transacción registrada con éxito' });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Error interno al registrar transacción' });
     }
 }
