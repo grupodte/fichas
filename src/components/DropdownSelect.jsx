@@ -1,19 +1,21 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Combobox } from '@headlessui/react';
-import { ChevronUpDownIcon, CheckIcon } from '@heroicons/react/20/solid';
+import { CheckIcon } from '@heroicons/react/20/solid';
 
 export default function DropdownSelect({ label, options = [], value, onChange }) {
     const [query, setQuery] = useState('');
 
     useEffect(() => {
-        setQuery(value || '');
-    }, [value]);
+        // Si el valor es un objeto, tomamos el label
+        const selected = options.find(opt => opt.value === value);
+        setQuery(selected?.label || '');
+    }, [value, options]);
 
     const filteredOptions = useMemo(() => {
         return query === ''
             ? options
             : options.filter(opt =>
-                opt.toLowerCase().includes(query.toLowerCase())
+                (opt.label || '').toLowerCase().includes(query.toLowerCase())
             );
     }, [query, options]);
 
@@ -25,7 +27,10 @@ export default function DropdownSelect({ label, options = [], value, onChange })
                     <div className="relative w-full cursor-default overflow-hidden rounded-lg border border-white/20 bg-white/10 backdrop-blur-md text-left shadow-sm focus-within:ring-2 focus-within:ring-white/30 transition">
                         <Combobox.Input
                             className="w-full bg-transparent border-none py-2 pl-3 pr-10 text-sm text-white placeholder-white/60 focus:outline-none"
-                            displayValue={(opt) => opt || ''}
+                            displayValue={() => {
+                                const selected = options.find(opt => opt.value === value);
+                                return selected?.label || '';
+                            }}
                             placeholder={`Buscar ${label.toLowerCase()}...`}
                             onChange={(e) => setQuery(e.target.value)}
                         />
@@ -38,7 +43,7 @@ export default function DropdownSelect({ label, options = [], value, onChange })
                             {filteredOptions.map((opt, i) => (
                                 <Combobox.Option
                                     key={i}
-                                    value={opt}
+                                    value={opt.value}
                                     className={({ active }) =>
                                         `relative cursor-default select-none py-2 pl-10 pr-4 transition ${active ? 'bg-purple-600/30 text-white' : 'text-white/80'
                                         }`
@@ -47,9 +52,10 @@ export default function DropdownSelect({ label, options = [], value, onChange })
                                     {({ selected }) => (
                                         <>
                                             <span
-                                                className={`block truncate ${selected ? 'font-semibold text-white' : 'font-normal'}`}
+                                                className={`block truncate ${selected ? 'font-semibold text-white' : 'font-normal'
+                                                    }`}
                                             >
-                                                {opt}
+                                                {opt.label}
                                             </span>
                                             {selected && (
                                                 <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-purple-400">

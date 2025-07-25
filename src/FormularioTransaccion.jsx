@@ -5,71 +5,171 @@ import DropdownSelect from './components/DropdownSelect';
 
 const FormularioTransaccion = () => {
     const [clientes, setClientes] = useState([]);
+    const [cuentas, setCuentas] = useState([]);
+    const [categorias, setCategorias] = useState([]);
     const [enviando, setEnviando] = useState(false);
-    const [clienteId, setClienteId] = useState('');
 
-    // Cargar clientes desde Supabase
+    const [formData, setFormData] = useState({
+        cliente_id: null,
+        cuenta_origen_id: null,
+        cuenta_destino_id: null,
+        monto_ingreso: '',
+        monto_egreso: '',
+        categoria_resultado_id: null,
+        descripcion: '',
+        fecha: new Date().toISOString().split('T')[0],
+    });
+
+    // Cargar datos iniciales
     useEffect(() => {
-        const fetchClientes = async () => {
-            const { data, error } = await supabase.from('clientes').select('id, nombre');
-            if (error) {
-                toast.error('Error al cargar clientes');
-            } else {
-                setClientes(data || []);
-            }
+        const fetchData = async () => {
+            const { data: clientesData } = await supabase.from('clientes').select('id, nombre');
+            const { data: cuentasData } = await supabase.from('cuentas').select('id, nombre');
+            const { data: categoriasData } = await supabase.from('categorias_resultado').select('id, nombre');
+
+            setClientes((clientesData || []).map(c => ({ label: c.nombre, value: c.id })));
+            setCuentas((cuentasData || []).map(c => ({ label: c.nombre, value: c.id })));
+            setCategorias((categoriasData || []).map(cat => ({ label: cat.nombre, value: cat.id })));
         };
-        fetchClientes();
+        fetchData();
     }, []);
+
+    const handleChange = (e) => {
+        setFormData(prev => ({
+            ...prev,
+            [e.target.name]: e.target.value,
+        }));
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!clienteId) {
+
+        // Validaciones
+        if (!formData.cliente_id) {
             toast.error('Selecciona un cliente');
             return;
         }
+        if (!formData.categoria_resultado_id) {
+            toast.error('Selecciona una categoría');
+            return;
+        }
+        if (!formData.monto_ingreso && !formData.monto_egreso) {
+            toast.error('Ingresa al menos un monto');
+            return;
+        }
+
         setEnviando(true);
         try {
             const res = await fetch('/api/registrar-transaccion', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cliente_id: clienteId }),
+                body: JSON.stringify(formData),
             });
             const result = await res.json();
-            if (!res.ok) throw new Error(result.error || 'Error');
-            toast.success('Cliente enviado correctamente');
-            setClienteId('');
+
+            if (!res.ok) throw new Error(result.error || 'Error al registrar transacción');
+
+            toast.success(result.mensaje || 'Transacción registrada');
+            setFormData({
+                cliente_id: null,
+                cuenta_origen_id: null,
+                cuenta_destino_id: null,
+                monto_ingreso: '',
+                monto_egreso: '',
+                categoria_resultado_id: null,
+                descripcion: '',
+                fecha: new Date().toISOString().split('T')[0],
+            });
         } catch (err) {
-            toast.error(err.message || 'Error al enviar');
+            console.error(err);
+            toast.error(err.message || 'Error al registrar transacción');
         } finally {
             setEnviando(false);
         }
     };
 
     return (
-        <div className="flex items-center justify-center px-4 pb-20 pt-8">
+        <div className="overflow-y-auto flex items-center justify-center px-4 pb-20 pt-8">
             <form
                 onSubmit={handleSubmit}
-                className="max-w-md mx-auto bg-white/10 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-white/30"
+                className="max-w-lg md:min-w-[400px] mx-auto bg-white/10 backdrop-blur-md shadow-xl rounded-2xl p-6 border border-white/30"
             >
-                <h2 className="text-2xl font-bold text-white mb-4 text-center">
-                    Seleccionar Cliente
-                </h2>
+                <h2 className="text-2xl font-bold text-white mb-4 text-center">Registrar Transacción</h2>
 
-                <DropdownSelect
-                    label="Cliente"
-                    options={clientes.map(c => ({ label: c.nombre, value: c.id }))}
-                    value={clienteId}
-                    onChange={val => setClienteId(val)}
-                />
+                <div className="flex flex-col gap-4">
+                    <DropdownSelect
+                        label="Cliente"
+                        options={clientes}
+                        value={formData.cliente_id}
+                        onChange={(val) => setFormData(prev => ({ ...prev, cliente_id: val }))}
+                    />
 
-                <button
-                    type="submit"
-                    disabled={enviando}
-                    className={`mt-6 w-full bg-black/30 text-white text-lg py-3 rounded-xl shadow-xl transition ${enviando ? 'opacity-50 cursor-not-allowed' : 'hover:ring-2 hover:ring-white'
-                        }`}
-                >
-                    {enviando ? 'Enviando...' : 'Guardar'}
-                </button>
+                    <input
+                        type="date"
+                        name="fecha"
+                        value={formData.fecha}
+                        onChange={handleChange}
+                        className="input-base py-2 px-3 text-sm bg-white/10 backdrop-blur-md w-full text-white"
+                    />
+
+                    <input
+                        name="monto_ingreso"
+                        type="number"
+                        placeholder="Monto ingreso"
+                        value={formData.monto_ingreso}
+                        onChange={handleChange}
+                        className="input-base py-2 px-3 text-sm bg-white/10 backdrop-blur-md w-full text-white border-green-400"
+                    />
+
+                    <DropdownSelect
+                        label="Cuenta destino"
+                        options={cuentas}
+                        value={formData.cuenta_destino_id}
+                        onChange={(val) => setFormData(prev => ({ ...prev, cuenta_destino_id: val }))}
+                    />
+
+                    <input
+                        name="monto_egreso"
+                        type="number"
+                        placeholder="Monto egreso"
+                        value={formData.monto_egreso}
+                        onChange={handleChange}
+                        className="input-base py-2 px-3 text-sm bg-white/10 backdrop-blur-md w-full text-white border-red-400"
+                    />
+
+                    <DropdownSelect
+                        label="Cuenta origen"
+                        options={cuentas}
+                        value={formData.cuenta_origen_id}
+                        onChange={(val) => setFormData(prev => ({ ...prev, cuenta_origen_id: val }))}
+                    />
+
+                    <DropdownSelect
+                        label="Categoría"
+                        options={categorias}
+                        value={formData.categoria_resultado_id}
+                        onChange={(val) => setFormData(prev => ({ ...prev, categoria_resultado_id: val }))}
+                    />
+
+                    <textarea
+                        name="descripcion"
+                        placeholder="Descripción"
+                        value={formData.descripcion}
+                        onChange={handleChange}
+                        className="input-base py-2 px-3 text-sm bg-white/10 backdrop-blur-md w-full text-white"
+                    />
+                </div>
+
+                <div className="mt-6">
+                    <button
+                        type="submit"
+                        disabled={enviando}
+                        className={`w-full bg-black/30 text-white text-lg py-3 rounded-xl shadow-xl transition ${enviando ? 'opacity-50 cursor-not-allowed' : 'hover:ring-2 hover:ring-white'
+                            }`}
+                    >
+                        {enviando ? 'Enviando...' : 'Guardar transacción'}
+                    </button>
+                </div>
             </form>
         </div>
     );
