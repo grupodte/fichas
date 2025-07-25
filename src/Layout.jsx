@@ -16,7 +16,7 @@ const Layout = () => {
     }
 
     return (
-        <div className="flex min-h-screen bg-gray-100">
+        <div className="flex min-h-screen ">
             {/* Barra lateral */}
             <Sidebar onLogout={handleLogout} />
 

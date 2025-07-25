@@ -10,7 +10,6 @@ import Dash from './Dash';
 function App() {
   return (
     <>
-      <Navbar />
       <main className="main-content">
         <Routes>
           <Route path="/login" element={<Login />} />
