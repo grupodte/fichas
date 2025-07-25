@@ -5,7 +5,6 @@ import Transacciones from './Transacciones';
 import Dashboard from './Dashboard';
 import Login from './Login';
 import Layout from './Layout';
-import Dash from './Dash';
 import EmpresaLayout from './EmpresaLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 
