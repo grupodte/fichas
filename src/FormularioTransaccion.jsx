@@ -5,18 +5,14 @@ import { toast } from 'react-hot-toast';
 const FormularioTransaccion = ({ usuarioId, empresaId }) => {
     const [cuentas, setCuentas] = useState([]);
     const [activosDisponibles, setActivosDisponibles] = useState([]);
-    const [divisasDisponibles, setDivisasDisponibles] = useState([]);
-
     const [formData, setFormData] = useState({
         cuenta_id: null,
-        activo: null,
-        divisa: null,
-        monto: '',
+        cuenta_destino_activo_id: null,
+        monto_ingreso: '',
         categoria_resultado_id: null,
         cliente_id: null,
         descripcion: ''
     });
-
     const [enviando, setEnviando] = useState(false);
 
     // Cargar cuentas con sus activos y divisas
@@ -49,53 +45,47 @@ const FormularioTransaccion = ({ usuarioId, empresaId }) => {
         if (!cuenta) return;
         const activos = cuenta.cuentas_activos.map(ca => ({
             label: `${ca.activo.nombre} (${ca.divisa.codigo})`,
-            value: ca.id,
-            divisa: ca.divisa.codigo
+            value: ca.id
         }));
         setActivosDisponibles(activos);
         if (activos.length === 1) {
             // Autoseleccionar si solo hay uno
-            setFormData(prev => ({ ...prev, activo: activos[0].value, divisa: activos[0].divisa }));
+            setFormData(prev => ({ ...prev, cuenta_destino_activo_id: activos[0].value }));
         } else {
-            setFormData(prev => ({ ...prev, activo: null, divisa: null }));
+            setFormData(prev => ({ ...prev, cuenta_destino_activo_id: null }));
         }
     }, [formData.cuenta_id]);
 
-    // Cuando elige activo, autoseleccionar divisa
-    useEffect(() => {
-        const activoSel = activosDisponibles.find(a => a.value === formData.activo);
-        if (activoSel) {
-            setFormData(prev => ({ ...prev, divisa: activoSel.divisa }));
-        }
-    }, [formData.activo]);
-
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.activo || !formData.monto) {
-            toast.error('Selecciona cuenta, activo y monto');
+        if (!formData.cuenta_destino_activo_id || !formData.monto_ingreso) {
+            toast.error('Selecciona cuenta y monto');
             return;
         }
 
         setEnviando(true);
         try {
-            const { error } = await supabase.from('transacciones').insert([{
-                empresa_id: empresaId,
-                fecha: new Date().toISOString().split('T')[0],
-                cuenta_destino_activo_id: formData.activo,
-                monto_ingreso: parseFloat(formData.monto),
-                categoria_resultado_id: formData.categoria_resultado_id,
-                cliente_id: formData.cliente_id,
-                descripcion: formData.descripcion,
-                created_by: usuarioId
-            }]);
-            if (error) throw error;
-            toast.success('Transacción registrada');
+            const res = await fetch('/api/registrar-transaccion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...formData,
+                    empresa_id: empresaId
+                })
+            });
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.error || 'Error al registrar');
+            toast.success(result.mensaje || 'Transacción registrada');
             setFormData({
-                cuenta_id: null, activo: null, divisa: null,
-                monto: '', categoria_resultado_id: null, cliente_id: null, descripcion: ''
+                cuenta_id: null,
+                cuenta_destino_activo_id: null,
+                monto_ingreso: '',
+                categoria_resultado_id: null,
+                cliente_id: null,
+                descripcion: ''
             });
         } catch (err) {
-            toast.error('Error al guardar la transacción');
+            toast.error(err.message || 'Error al registrar');
         } finally {
             setEnviando(false);
         }
@@ -126,8 +116,8 @@ const FormularioTransaccion = ({ usuarioId, empresaId }) => {
                     <div className="mb-4">
                         <label className="text-white block mb-2">Activo / Divisa</label>
                         <select
-                            value={formData.activo || ''}
-                            onChange={e => setFormData(prev => ({ ...prev, activo: e.target.value }))}
+                            value={formData.cuenta_destino_activo_id || ''}
+                            onChange={e => setFormData(prev => ({ ...prev, cuenta_destino_activo_id: e.target.value }))}
                             className="w-full p-2 rounded-lg bg-white/10 text-white"
                         >
                             <option value="">Seleccionar</option>
@@ -143,8 +133,8 @@ const FormularioTransaccion = ({ usuarioId, empresaId }) => {
                     <label className="text-white block mb-2">Monto</label>
                     <input
                         type="number"
-                        value={formData.monto}
-                        onChange={e => setFormData(prev => ({ ...prev, monto: e.target.value }))}
+                        value={formData.monto_ingreso}
+                        onChange={e => setFormData(prev => ({ ...prev, monto_ingreso: e.target.value }))}
                         className="w-full p-2 rounded-lg bg-white/10 text-white"
                     />
                 </div>
@@ -159,7 +149,6 @@ const FormularioTransaccion = ({ usuarioId, empresaId }) => {
                     />
                 </div>
 
-                {/* Botón */}
                 <div className="mt-6">
                     <button
                         type="submit"
